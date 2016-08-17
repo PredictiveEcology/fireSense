@@ -2,8 +2,8 @@
 # are put into the simList. To use objects and functions, use sim$xxx.
 defineModule(sim, list(
   name = "fireSense",
-  description = "A landscape fire simulation model sensitive to weather and land-cover changes.",
-  keywords = c("fire", "weather", "vegetation", "land-cover", "percolation"),
+  description = "A landscape fire model, possibly sensitive to environmental changes (e.g. weather and land-cover).",
+  keywords = c("fire", "percolation", "environmental control", "feedback", "weather", "vegetation", "land-cover"),
   authors = c(person("Jean", "Marchal", email = "jean.d.marchal@gmail.com", role = c("aut", "cre"))),
   childModules = character(),
   version = numeric_version("0.0.1"),
