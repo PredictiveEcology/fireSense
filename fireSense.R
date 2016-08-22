@@ -21,8 +21,8 @@ defineModule(sim, list(
       desc = "optional. Interval in simulation time units between two runs of this module.")
   ),
   inputObjects = data.frame(
-    objectName = c("ignitProb", "escapeProb", "spreadProb", "trajAge"),
-    objectClass = c("raster", "raster", "raster", "data.table"),
+    objectName = c("ignitProb", "escapeProb", "spreadProb", "ageMap"),
+    objectClass = c("raster", "raster", "raster", "raster, data.table"),
     sourceURL = "",
     other = NA_character_,
     stringsAsFactors = FALSE
@@ -114,7 +114,17 @@ fireSenseBurn <- function(sim) {
   
     fires <- SpaDES::spread(sim$spreadProb, loci = loci, spreadProb = sim$spreadProb, returnIndices = TRUE)
   
-    sim$trajAgeMap[px_id %in% fires[["indices"]], age := 0L] ## Update age map
+    ## Update age map
+      if (is(ageMap, "RasterLayer")) {
+        
+        sim$ageMap[fires[["indices"]]] <- 0
+        
+      } else if (is.data.table(ageMap)) {
+        
+        sim$ageMap[px_id %in% fires[["indices"]], age := 0L] 
+        
+      }
+    
     #sim$fireSize[[time(sim) - start(sim) + 1L]] <- tabulate(fires[["id"]])
   }
   
