@@ -104,15 +104,14 @@ TODO: Write what is saved. (there is currently nothing saved, but this may chang
 - A `RasterStack` called **vegMap** describing the distribution of vegetation types as porportions of pixel area
 
 ## Output data
-- number of ignitions
+<!-- TODO - number of ignitions
 - number of fires that escaped
-- fire sizes
+- fire sizes-->
 - A `data.table` called "trajAgeMap" with fourth columns:
-    - `px_id`, the pixel ID (cell number)
-    - `traj`, the succession trajectory (number)
-    - `age`, the age of the forest stand
-    - `area`, the area covered by the forest stand.
-- A vegetation map called "vegMap".
+    - **px_id**, the pixel ID (cell number)
+    - **traj**, the succession trajectory (number)
+    - **age**, the age of the forest stand
+    - **area**, the area covered by the forest stand
 
 # Links to other modules
 This module should be coupled with a dynamic vegetation model.
