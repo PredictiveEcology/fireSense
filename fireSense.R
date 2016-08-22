@@ -15,6 +15,9 @@ defineModule(sim, list(
   reqdPkgs = list("raster"),
   parameters = rbind(
     #defineParameter("paramName", "paramClass", default, min, max, "parameter description")),
+    defineParameter(name = "mapping", class = "character, list", default = NULL,
+      desc = "optional. Named character vector or list mapping the names of data
+              objects required by the module to those in the simList environment."),
     defineParameter(name = "initialRunTime", class = "numeric", default = start(sim),
       desc = "optional. Simulation time at which to start this module. Defaults to simulation start time."),
     defineParameter(name = "intervalRunModule", class = "numeric", default = NA, 
@@ -104,24 +107,50 @@ fireSensePlot <- function(sim) {
   return(invisible(sim))
 }
 
-### template for your event1
 fireSenseBurn <- function(sim) {
-
-  ignited <- which(as.logical(rbinom(n = ncell(sim$ignitProb), size = 1, prob = sim$ignitProb[])))
-  loci <- ignited[sim$escapeProb[ignited] > runif(length(ignited))]
+  
+  ## Mapping
+    iP <- sim[[
+      if (tryCatch(!is.null(p(sim)$mapping[["ignitProb"]]), error = function(e) FALSE)) {
+        p(sim)$mapping[["ignitProb"]]
+      } else "ignitProb"
+    ]]
+  
+    eP <- sim[[
+      if (tryCatch(!is.null(p(sim)$mapping[["escapeProb"]]), error = function(e) FALSE)) {
+        p(sim)$mapping[["escapeProb"]]
+      } else "escapeProb"
+    ]]
+    
+    sP <- sim[[
+      if (tryCatch(!is.null(p(sim)$mapping[["spreadProb"]]), error = function(e) FALSE)) {
+        p(sim)$mapping[["spreadProb"]]
+      } else "spreadProb"
+    ]]
+    
+    AM <- if (tryCatch(!is.null(p(sim)$mapping[["ageMap"]]), error = function(e) FALSE)) {
+      p(sim)$mapping[["ageMap"]]
+    } else "ageMap"
+    
+  ## Ignite
+  ignited <- which(as.logical(rbinom(n = ncell(iP), size = 1, prob = iP[])))
+  
+  ## Escape
+  loci <- ignited[eP[ignited] > runif(length(ignited))]
   
   if (length(loci) > 0L) {
   
-    fires <- SpaDES::spread(sim$spreadProb, loci = loci, spreadProb = sim$spreadProb, returnIndices = TRUE)
+    ## Spread
+    fires <- SpaDES::spread(sP, loci = loci, spreadProb = sP, returnIndices = TRUE)
   
     ## Update age map
-      if (is(ageMap, "RasterLayer")) {
+      if (is(sim[[AM]], "RasterLayer")) {
         
-        sim$ageMap[fires[["indices"]]] <- 0
+        sim[[AM]][fires[["indices"]]] <- 0
         
-      } else if (is.data.table(ageMap)) {
+      } else if (is.data.table(sim[[AM]])) {
         
-        sim$ageMap[px_id %in% fires[["indices"]], age := 0L] 
+        sim[[AM]][px_id %in% fires[["indices"]], age := 0L] 
         
       }
     
