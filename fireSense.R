@@ -2,8 +2,10 @@
 # are put into the simList. To use objects and functions, use sim$xxx.
 defineModule(sim, list(
   name = "fireSense",
-  description = "A landscape fire model, possibly sensitive to environmental changes (e.g. weather and land-cover).",
-  keywords = c("fire", "percolation", "environmental control", "feedback", "weather", "vegetation", "land-cover"),
+  description = "A landscape fire model, sensitive to environmental changes (e.g.
+                 weather and land-cover).",
+  keywords = c("fire", "percolation", "environmental control", "feedback", 
+                "weather", "vegetation", "land-cover"),
   authors = c(person("Jean", "Marchal", email = "jean.d.marchal@gmail.com", role = c("aut", "cre"))),
   childModules = character(),
   version = numeric_version("0.0.1"),
@@ -19,9 +21,11 @@ defineModule(sim, list(
       desc = "optional. Named character vector or list mapping the names of data
               objects required by the module to those in the simList environment."),
     defineParameter(name = "initialRunTime", class = "numeric", default = start(sim),
-      desc = "optional. Simulation time at which to start this module. Defaults to simulation start time."),
+      desc = "optional. Simulation time at which to start this module. Defaults 
+              to simulation start time."),
     defineParameter(name = "intervalRunModule", class = "numeric", default = NA, 
-      desc = "optional. Interval in simulation time units between two runs of this module.")
+      desc = "optional. Interval in simulation time units between two runs of 
+              this module.")
   ),
   inputObjects = data.frame(
     objectName = c("ignitProb", "escapeProb", "spreadProb", "ageMap"),
