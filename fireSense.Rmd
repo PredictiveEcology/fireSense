@@ -1,78 +1,119 @@
 ---
 title: "fireSense"
-author: "Module Author"
-date: "16 August 2016"
-output: pdf_document
+author: "Jean Marchal"
+date: "August 2016"
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 # Overview
+A landscape fire model sensitive to environmental changes (e.g. weather and land-cover).
 
-Provide an overview of what the module does / how to use the module.
+# Download the module
+```{r download module, eval = FALSE, echo = TRUE}
+library(SpaDES)
 
-Module documentation should be written so that others can use your module.
-This is a template for module documentation, and should be changed to reflect your module.
+moduleName <- "fireSense"
 
-## RMarkdown
+workingDirectory <- tempdir() # Change this to a place you would like to put the module, if desired.
 
-RMarkdown syntax allows R code, outputs, and figures to be rendered in the documentation.
-
-For help writing in RMarkdown, see http://rmarkdown.rstudio.com/.
+downloadModule(moduleName, path = workingDirectory)
+```
 
 # Usage
+## Module parameters
+Name|Default|Description
+----|:-------:|---------------------------------------------------------------------
+`mapping`|`NULL`|optional. Named `character vector` or `list` mapping the names of data objects required by the module to those in the `simList` environment.
+`initialRunTime`|`start(sim)`|optional. Simulation time at which to start this module. Defaults to simulation start time.
+`intervalRunModule`|`NA`|optional. Interval in simulation time units between two runs of this module.
+|||
 
-```{r module_usage}
+## Usage example
+```{r module usage example, eval = FALSE}
 library(SpaDES)
 library(magrittr)
 
-inputDir <- file.path(tempdir(), "inputs") %>% checkPath(create = TRUE)
-outputDir <- file.path(tempdir(), "outputs")
-times <- list(start = 0, end = 10)
+# Packages required by the module
+library(data.table)
+library(raster)
+
+set.seed(1)
+
+nx <- ny <- 100L
+n <- nx * ny
+r <- raster(nrows = ny, ncols = nx, xmn = -nx/2, xmx = nx/2, ymn = -ny/2, ymx = ny/2)
+
+# Create a map ignition probabilities
+ignitProb <- gaussMap(r, scale = 10, var = .0001, speedup = nx/5e2, inMemory = TRUE)
+
+# Create a map of escape probabilities
+escapeProb <- gaussMap(r, scale = 50, var = .01, speedup = nx/5e2, inMemory = TRUE)
+
+# Create a map of spread probabilities
+spreadProb <- gaussMap(r, scale = 300, var = .05, speedup = nx/5e2, inMemory = TRUE)
+
+# Create a map of stand age
+random_ageMap <- gaussMap(r, scale = 300, var = 1e4, speedup = nx/5e2, inMemory = TRUE)
+
+#outputDir <- file.path(tempdir(), "outputs")
+times <- list(start = 1, end = 100, timeunit = "year")
 parameters <- list(
-  .globals = list(burnStats = "nPixelsBurned"),
-  #.progress = list(type = "text", interval = 1), # for a progress bar
-  ## If there are further modules, each can have its own set of parameters:
-  #module1 = list(param1 = value1, param2 = value2),
-  #module2 = list(param1 = value1, param2 = value2)
-)
-modules <- list("fireSense")
-objects <- list()
-paths <- list(
-  cachePath = file.path(outputDir, "cache"),
-  modulePath = file.path(".."),
-  inputPath = inputDir,
-  outputPath = outputDir
+  fireSense = list(mapping = list(ageMap = "random_ageMap") # One can use mapping to map data objects in the
+                                                            # simList environment to data required by the module.
+                                                            # Here random_ageMap is mapped to ageMap.  
+  )
 )
 
-mySim <- simInit(times = times, params = parameters, modules = modules,
-                 objects = objects, paths = paths)
+modules <- list("fireSense")
+objects <- c("ignitProb",
+             "escapeProb",
+             "spreadProb",
+             "random_ageMap") # Pass objects found in the global environment to the simList environment
+paths <- list(
+  # cachePath = file.path(outputDir, "cache"),
+  modulePath = file.path("~/Documents/GitHub/McIntire-lab/modulesPrivate/") ## TODO: change this to tempdir()
+  # inputPath = inputDir,
+  # outputPath = outputDir
+)
+
+mySim <- simInit(times = times, params = parameters, modules = modules, objects = objects, paths = paths)
 
 spades(mySim)
 ```
 
 # Events
-
-Describe what happens for each event type.
+- ignite fires
+- determine which fires escape
+- spread escaped fires
+- update age map
 
 ## Plotting
-
-Write what is plotted.
+TODO: Write what is plotted. (there is currently nothing saved, but this may change in the future)
 
 ## Saving
-
-Write what is saved.
+TODO: Write what is saved. (there is currently nothing saved, but this may change in the future)
 
 # Data dependencies
-
 ## Input data
-
-How to obtain input data, and a description of the data required by the module.
-If `sourceURL` is specified, `downloadData("fireSense", "path/to/modules/dir")` may be sufficient.
+- A `RasterLayer` called **ignitProb** describing ignition probabilities
+- A `RasterLayer` called **escapeProb** describing escape probabilities
+- A `RasterLayer` called **spreadProb** describing spread probabilities
+- A `RasterLayer` or a `data.table` (with a column named **age**) called **ageMap** describing the age of forest stands
+- A `RasterStack` called **vegMap** describing the distribution of vegetation types as porportions of pixel area
 
 ## Output data
-
-Description of the module outputs.
+- number of ignitions
+- number of fires that escaped
+- fire sizes
+- A `data.table` called "trajAgeMap" with fourth columns:
+    - `px_id`, the pixel ID (cell number)
+    - `traj`, the succession trajectory (number)
+    - `age`, the age of the forest stand
+    - `area`, the area covered by the forest stand.
+- A vegetation map called "vegMap".
 
 # Links to other modules
-
-Describe any anticipated linkages to other modules.
+This module should be coupled with a dynamic vegetation model.
 

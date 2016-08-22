@@ -14,7 +14,7 @@ defineModule(sim, list(
   timeunit = NA_character_, # e.g., "year",
   citation = list("citation.bib"),
   documentation = list("README.txt", "fireSense.Rmd"),
-  reqdPkgs = list("raster"),
+  reqdPkgs = list("data.table", "raster"),
   parameters = rbind(
     #defineParameter("paramName", "paramClass", default, min, max, "parameter description")),
     defineParameter(name = "mapping", class = "character, list", default = NULL,
@@ -149,7 +149,7 @@ fireSenseBurn <- function(sim) {
   
     ## Update age map
       if (is(sim[[AM]], "RasterLayer")) {
-        
+
         sim[[AM]][fires[["indices"]]] <- 0
         
       } else if (is.data.table(sim[[AM]])) {
