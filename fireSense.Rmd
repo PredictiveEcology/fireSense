@@ -55,7 +55,7 @@ escapeProb <- gaussMap(r, scale = 50, var = .01, speedup = nx/5e2, inMemory = TR
 spreadProb <- gaussMap(r, scale = 300, var = .05, speedup = nx/5e2, inMemory = TRUE)
 
 # Create a map of stand age
-random_ageMap <- gaussMap(r, scale = 300, var = 1e4, speedup = nx/5e2, inMemory = TRUE)
+random_ageMap <- gaussMap(r, scale = 300, var = 1e4, speedup = nx/5e2, inMemory = TRUE) %>% calc(function(x)round(x+1,0))
 
 #outputDir <- file.path(tempdir(), "outputs")
 times <- list(start = 1, end = 100, timeunit = "year")
