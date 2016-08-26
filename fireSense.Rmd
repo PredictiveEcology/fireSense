@@ -107,7 +107,7 @@ TODO: Write what is saved. (there is currently nothing saved, but this may chang
 <!-- TODO - number of ignitions
 - number of fires that escaped
 - fire sizes-->
-- A `data.table` called "trajAgeMap" with fourth columns:
+- A `data.table` called **trajAgeMap** with fourth columns:
     - **px_id**, the pixel ID (cell number)
     - **traj**, the succession trajectory (number)
     - **age**, the age of the forest stand
