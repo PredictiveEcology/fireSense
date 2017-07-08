@@ -1,7 +1,7 @@
 ---
 title: "fireSense"
 author: "Jean Marchal"
-date: "August 2016"
+date: "July 2017"
 output:
   html_document: default
   pdf_document: default
@@ -16,7 +16,7 @@ library(SpaDES)
 
 moduleName <- "fireSense"
 
-workingDirectory <- tempdir() # Change this to a place you would like to put the module, if desired.
+workingDirectory <- tempdir() # Location where the module will be downloaded
 
 downloadModule(moduleName, path = workingDirectory)
 ```
@@ -24,10 +24,10 @@ downloadModule(moduleName, path = workingDirectory)
 # Usage
 ## Module parameters
 Name|Default|Description
-----|:-------:|---------------------------------------------------------------------
-`mapping`|`NULL`|optional. Named `character vector` or `list` mapping the names of data objects required by the module to those in the `simList` environment.
-`initialRunTime`|`start(sim)`|optional. Simulation time at which to start this module. Defaults to simulation start time.
-`intervalRunModule`|`NA`|optional. Interval in simulation time units between two runs of this module.
+----|:-------|---------------------------------------------------------------------
+`mapping`|`NULL`|optional named vector or list of character strings mapping the names of data objects required by the module to those in the `simList` environment.
+`initialRunTime`|`start(simList)`|when to start this module? By default, the start time of the simulation.
+`intervalRunModule`|`NA`|optional. Interval between two runs of this module, expressed in units of simulation time.
 |||
 
 ## Usage example
@@ -97,21 +97,18 @@ TODO: Write what is saved. (there is currently nothing saved, but this may chang
 
 # Data dependencies
 ## Input data
-- A `RasterLayer` called **ignitProb** describing ignition probabilities
-- A `RasterLayer` called **escapeProb** describing escape probabilities
-- A `RasterLayer` called **spreadProb** describing spread probabilities
-- A `RasterLayer` or a `data.table` (with a column named **age**) called **ageMap** describing the age of forest stands
-- A `RasterStack` called **vegMap** describing the distribution of vegetation types as porportions of pixel area
+- **ignitProb**: a RasterLayer or RasterStack (time series) describing spatial variations in ignition probabilities.
+- **escapeProb**: a RasterLayer or RasterStack (time series) describing spatial variations in escape probabilities.
+- **spreadProb**: a RasterLayer or RasterStack (time series) describing spatial variations in spread probabilities.
+- **ageMap**: a RasterLayer describing spatial variations in the age of forest stands at the start of the simulation.
+- **vegMap**: A RasterStack describing the spatial distribution of land-cover classes at the start of the simulation. There should be one layer per land-cover class. Each layer should describe the proportion of each cell covered by a specific land-cover class.
 
 ## Output data
 <!-- TODO - number of ignitions
 - number of fires that escaped
 - fire sizes-->
-- A `data.table` called **trajAgeMap** with fourth columns:
-    - **px_id**, the pixel ID (cell number)
-    - **traj**, the succession trajectory (number)
-    - **age**, the age of the forest stand
-    - **area**, the area covered by the forest stand
+- **ageMap**: a RasterLayer describing spatial variations in the age of forest stands at the end of the simulation.
+- **vegMap**: a RasterStack describing the spatial distribution of land-cover classes at the end of the simulation. Each layer describes the proportion of each cell covered by a specific land-cover class.
 
 # Links to other modules
 This module should be coupled with a dynamic vegetation model.

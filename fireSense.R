@@ -8,7 +8,7 @@ defineModule(sim, list(
                 "weather", "vegetation", "land-cover"),
   authors = c(person("Jean", "Marchal", email = "jean.d.marchal@gmail.com", role = c("aut", "cre"))),
   childModules = character(),
-  version = numeric_version("0.0.1"),
+  version = numeric_version("0.1.0"),
   spatialExtent = raster::extent(rep(NA_real_, 4)),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = NA_character_, # e.g., "year",
@@ -18,27 +18,69 @@ defineModule(sim, list(
   parameters = rbind(
     #defineParameter("paramName", "paramClass", default, min, max, "parameter description")),
     defineParameter(name = "mapping", class = "character, list", default = NULL,
-      desc = "optional. Named character vector or list mapping the names of data
-              objects required by the module to those in the simList environment."),
+                    desc = "optional named vector or list of character strings 
+                            mapping the names of data objects required by the 
+                            module to those in the simList environment."),
     defineParameter(name = "initialRunTime", class = "numeric", default = start(sim),
-      desc = "optional. Simulation time at which to start this module. Defaults 
-              to simulation start time."),
+                    desc = "when to start this module? By default, the start time of the 
+                            simulation."),
     defineParameter(name = "intervalRunModule", class = "numeric", default = NA, 
-      desc = "optional. Interval in simulation time units between two runs of 
-              this module.")
+                    desc = "optional. Interval between two runs of this module,
+                            expressed in units of simulation time.")
   ),
-  inputObjects = data.frame(
-    objectName = c("ignitProb", "escapeProb", "spreadProb", "ageMap"),
-    objectClass = c("raster", "raster", "raster", "raster, data.table"),
-    sourceURL = "",
-    other = NA_character_,
-    stringsAsFactors = FALSE
+  inputObjects = rbind(
+    expectsInput(
+      objectName = "ignitProb",
+      objectClass = "RasterLayer",
+      sourceURL = NA_character_,
+      desc = "A RasterLayer or RasterStack (time series) describing spatial
+              variations in ignition probabilities."
+    ),
+    expectsInput(
+      objectName = "escapeProb",
+      objectClass = "RasterLayer",
+      sourceURL = NA_character_,
+      desc = "A RasterLayer or RasterStack (time series) describing spatial
+              variations in escape probabilities."
+    ),
+    expectsInput(
+      objectName = "spreadProb",
+      objectClass = "RasterLayer",
+      sourceURL = NA_character_,
+      desc = "A RasterLayer or RasterStack describing spatial variations in the
+              spread probabilities."
+    ),
+    expectsInput(
+      objectName = "ageMap",
+      objectClass = "RasterLayer",
+      sourceURL = NA_character_,
+      desc = "A RasterLayer describing spatial variations in the age of forest 
+              stands at the start of the simulation."
+    ),
+    expectsInput(
+      objectName = "vegMap",
+      objectClass = "RasterStack",
+      sourceURL = NA_character_,
+      desc = "A RasterStack describing the spatial distribution of land-cover 
+              classes at the start of the simulation. There should be one layer
+              per land-cover class. Each layer should describe the proportion of
+              each cell covered by a specific land-cover class."
+    )
   ),
-  outputObjects = data.frame(
-    objectName = NA_character_,
-    objectClass = NA_character_,
-    other = NA_character_,
-    stringsAsFactors = FALSE
+  outputObjects = rbind(
+    createsOutput(
+      objectName = "ageMap",
+      objectClass = "RasterLayer",
+      desc = "A RasterLayer describing spatial variations in the age of forest
+              stands at the end of the simulation."
+    ),
+    createsOutput(
+      objectName = "vegMap",
+      objectClass = "RasterStack",
+      desc = "A RasterStack describing the spatial distribution of land-cover
+              classes at the end of the simulation. Each layer describes the
+              proportion of each cell covered by a specific land-cover class."
+    )
   )
 ))
 
@@ -57,7 +99,7 @@ doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE) {
     # schedule future event(s)
 
     # e.g.,
-    #sim <- scheduleEvent(sim, p(sim)$.plotInitialTime, "fireSense", "plot")
+    #sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "fireSense", "plot")
 
     # ! ----- STOP EDITING ----- ! #
   } else if (eventType == "save") {
@@ -86,7 +128,7 @@ doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE) {
 
 fireSenseInit <- function(sim) {
   
-  sim <- scheduleEvent(sim, eventTime = p(sim)$initialRunTime, "fireSense", "burn")
+  sim <- scheduleEvent(sim, eventTime = P(sim)$initialRunTime, current(sim)$moduleName, "burn")
   sim
   
 }
@@ -113,27 +155,29 @@ fireSensePlot <- function(sim) {
 
 fireSenseBurn <- function(sim) {
   
+  moduleName <- current(sim)$moduleName
+  
   ## Mapping
     iP <- sim[[
-      if (tryCatch(!is.null(p(sim)$mapping[["ignitProb"]]), error = function(e) FALSE)) {
-        p(sim)$mapping[["ignitProb"]]
+      if (tryCatch(!is.null(P(sim)$mapping[["ignitProb"]]), error = function(e) FALSE)) {
+        P(sim)$mapping[["ignitProb"]]
       } else "ignitProb"
     ]]
   
     eP <- sim[[
-      if (tryCatch(!is.null(p(sim)$mapping[["escapeProb"]]), error = function(e) FALSE)) {
-        p(sim)$mapping[["escapeProb"]]
+      if (tryCatch(!is.null(P(sim)$mapping[["escapeProb"]]), error = function(e) FALSE)) {
+        P(sim)$mapping[["escapeProb"]]
       } else "escapeProb"
     ]]
     
     sP <- sim[[
-      if (tryCatch(!is.null(p(sim)$mapping[["spreadProb"]]), error = function(e) FALSE)) {
-        p(sim)$mapping[["spreadProb"]]
+      if (tryCatch(!is.null(P(sim)$mapping[["spreadProb"]]), error = function(e) FALSE)) {
+        P(sim)$mapping[["spreadProb"]]
       } else "spreadProb"
     ]]
     
-    AM <- if (tryCatch(!is.null(p(sim)$mapping[["ageMap"]]), error = function(e) FALSE)) {
-      p(sim)$mapping[["ageMap"]]
+    AM <- if (tryCatch(!is.null(P(sim)$mapping[["ageMap"]]), error = function(e) FALSE)) {
+      P(sim)$mapping[["ageMap"]]
     } else "ageMap"
     
   ## Ignite
@@ -161,8 +205,8 @@ fireSenseBurn <- function(sim) {
     #sim$fireSize[[time(sim) - start(sim) + 1L]] <- tabulate(fires[["id"]])
   }
   
-  if (!is.na(p(sim)$intervalRunModule))
-    sim <- scheduleEvent(sim, time(sim) + p(sim)$intervalRunModule, "fireSense", "burn")
+  if (!is.na(P(sim)$intervalRunModule))
+    sim <- scheduleEvent(sim, time(sim) + P(sim)$intervalRunModule, moduleName, "burn")
   
   sim
   
