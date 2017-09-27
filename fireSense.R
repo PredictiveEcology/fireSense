@@ -189,7 +189,7 @@ fireSenseBurn <- function(sim) {
   if (length(loci) > 0L) {
   
     ## Spread
-    fires <- SpaDES::spread(sP, loci = loci, spreadProb = sP, returnIndices = TRUE)
+    fires <- SpaDES.tools::spread(sP, loci = loci, spreadProb = sP, returnIndices = TRUE)
   
     ## Update age map
       if (is(sim[[AM]], "RasterLayer")) {
