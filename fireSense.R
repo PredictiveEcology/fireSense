@@ -19,32 +19,32 @@ defineModule(sim, list(
     #defineParameter("paramName", "paramClass", default, min, max, "parameter description")),
     defineParameter(name = "mapping", class = "character, list", default = NULL,
                     desc = "optional named vector or list of character strings 
-                            mapping the names of data objects required by the 
-                            module to those in the simList environment."),
+                            mapping one or more inputs required by the module to
+                            objects loaded in the simList environment."),
     defineParameter(name = "initialRunTime", class = "numeric", default = start(sim),
-                    desc = "when to start this module? By default, the start time of the 
-                            simulation."),
+                    desc = "when to start this module? By default, the start
+                            time of the simulation."),
     defineParameter(name = "intervalRunModule", class = "numeric", default = NA, 
                     desc = "optional. Interval between two runs of this module,
                             expressed in units of simulation time.")
   ),
   inputObjects = rbind(
     expectsInput(
-      objectName = "ignitProb",
+      objectName = "ignProb",
       objectClass = "RasterLayer",
       sourceURL = NA_character_,
       desc = "A RasterLayer or RasterStack (time series) describing spatial
               variations in ignition probabilities."
     ),
     expectsInput(
-      objectName = "escapeProb",
+      objectName = "escProb",
       objectClass = "RasterLayer",
       sourceURL = NA_character_,
       desc = "A RasterLayer or RasterStack (time series) describing spatial
               variations in escape probabilities."
     ),
     expectsInput(
-      objectName = "spreadProb",
+      objectName = "sprProb",
       objectClass = "RasterLayer",
       sourceURL = NA_character_,
       desc = "A RasterLayer or RasterStack describing spatial variations in the
@@ -87,119 +87,97 @@ defineModule(sim, list(
 ## event types
 #   - type `init` is required for initialiazation
 
-doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE) {
-  if (eventType == "init") {
-    sim <- sim$fireSenseInit(sim)
-
-  } else if (eventType == "plot") {
-    # ! ----- EDIT BELOW ----- ! #
-    # do stuff for this event
-
-    #Plot(objectFromModule) # uncomment this, replace with object to plot
-    # schedule future event(s)
-
-    # e.g.,
-    #sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "fireSense", "plot")
-
-    # ! ----- STOP EDITING ----- ! #
-  } else if (eventType == "save") {
-    # ! ----- EDIT BELOW ----- ! #
-    # do stuff for this event
-
-    # e.g., call your custom functions/methods here
-    # you can define your own methods below this `doEvent` function
-
-    # schedule future event(s)
-
-    # e.g.,
-    # sim <- scheduleEvent(sim, time(sim) + increment, "fireSense", "save")
-
-    # ! ----- STOP EDITING ----- ! #
-  } else if (eventType == "burn") {
-    sim <- sim$fireSenseBurn(sim)
+doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE) 
+{
+  switch(
+    eventType,
+    init = { sim <- sim$fireSenseInit(sim) },
+    burn = { sim <- sim$fireSenseBurn(sim) },
+    save = {
+      # ! ----- EDIT BELOW ----- ! #
+      # do stuff for this event
       
-  } else {
+      # e.g., call your custom functions/methods here
+      # you can define your own methods below this `doEvent` function
+      
+      # schedule future event(s)
+      
+      # e.g.,
+      # sim <- scheduleEvent(sim, time(sim) + increment, "fireSense_EscapeFit", "save")
+      
+      # ! ----- STOP EDITING ----- ! #
+    },
     warning(paste("Undefined event type: '", current(sim)[1, "eventType", with = FALSE],
                   "' in module '", current(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
-  }
+  )
   invisible(sim)
 }
 
 
-fireSenseInit <- function(sim) {
-  
+fireSenseInit <- function(sim) 
+{
   sim <- scheduleEvent(sim, eventTime = P(sim)$initialRunTime, current(sim)$moduleName, "burn")
   sim
-  
 }
 
-### template for save events
-fireSenseSave <- function(sim) {
-  # ! ----- EDIT BELOW ----- ! #
-  # do stuff for this event
-  sim <- saveFiles(sim)
-
-  # ! ----- STOP EDITING ----- ! #
-  return(invisible(sim))
-}
-
-### template for plot events
-fireSensePlot <- function(sim) {
-  # ! ----- EDIT BELOW ----- ! #
-  # do stuff for this event
-  #Plot("object")
-
-  # ! ----- STOP EDITING ----- ! #
-  return(invisible(sim))
-}
-
-fireSenseBurn <- function(sim) {
-  
+fireSenseBurn <- function(sim) 
+{
   moduleName <- current(sim)$moduleName
-  
+
   ## Mapping
-    iP <- sim[[
-      if (tryCatch(!is.null(P(sim)$mapping[["ignitProb"]]), error = function(e) FALSE)) {
-        P(sim)$mapping[["ignitProb"]]
-      } else "ignitProb"
-    ]]
+    if (!is.null(P(sim)[["mapping"]][["ignProb"]]))
+      sim[["ignProb"]] <- sim[[P(sim)[["mapping"]][["ignProb"]]]]
   
-    eP <- sim[[
-      if (tryCatch(!is.null(P(sim)$mapping[["escapeProb"]]), error = function(e) FALSE)) {
-        P(sim)$mapping[["escapeProb"]]
-      } else "escapeProb"
-    ]]
+    if (!is.null(P(sim)[["mapping"]][["escProb"]]))
+      sim[["escProb"]] <- sim[[P(sim)[["mapping"]][["escProb"]]]]
     
-    sP <- sim[[
-      if (tryCatch(!is.null(P(sim)$mapping[["spreadProb"]]), error = function(e) FALSE)) {
-        P(sim)$mapping[["spreadProb"]]
-      } else "spreadProb"
-    ]]
+    if (!is.null(P(sim)[["mapping"]][["sprProb"]]))
+      sim[["sprProb"]] <- sim[[P(sim)[["mapping"]][["sprProb"]]]]
     
-    AM <- if (tryCatch(!is.null(P(sim)$mapping[["ageMap"]]), error = function(e) FALSE)) {
-      P(sim)$mapping[["ageMap"]]
-    } else "ageMap"
+    if (!is.null(P(sim)[["mapping"]][["ageMap"]]))
+      sim[["ageMap"]] <- sim[[P(sim)[["mapping"]][["ageMap"]]]] 
+    # 
+    # iP <- sim[[
+    #   if (tryCatch(!is.null(), error = function(e) FALSE)) {
+    #     P(sim)[["mapping"][["ignitProb"]]
+    #   } else "ignitProb"
+    # ]]
+    # 
+    # eP <- sim[[
+    #   if (tryCatch(!is.null(P(sim)[["mapping"][["escapeProb"]]), error = function(e) FALSE)) {
+    #     P(sim)[["mapping"][["escapeProb"]]
+    #   } else "escapeProb"
+    # ]]
+    # 
+    # sP <- sim[[
+    #   if (tryCatch(!is.null(P(sim)[["mapping"][["spreadProb"]]), error = function(e) FALSE)) {
+    #     P(sim)[["mapping"][["spreadProb"]]
+    #   } else "spreadProb"
+    # ]]
+    # 
+    # AM <- if (tryCatch(!is.null(P(sim)[["mapping"][["ageMap"]]), error = function(e) FALSE)) {
+    #   P(sim)[["mapping"][["ageMap"]]
+    # } else "ageMap"
     
   ## Ignite
-  ignited <- which(as.logical(rbinom(n = ncell(iP), size = 1, prob = iP[])))
+  ignited <- which(rbinom(n = ncell(sim[["ignProb"]]), size = 1, prob = sim[["ignProb"]][]) > 0)
   
   ## Escape
-  loci <- ignited[eP[ignited] > runif(length(ignited))]
+  loci <- ignited[sim[["escProb"]][ignited] > runif(length(ignited))]
   
-  if (length(loci) > 0L) {
-  
+  if (length(loci) > 0L)
+  {
     ## Spread
-    fires <- SpaDES.tools::spread(sP, loci = loci, spreadProb = sP, returnIndices = TRUE)
+    fires <- SpaDES.tools::spread(sim[["sprProb"]], loci = loci, spreadProb = sim[["sprProb"]], returnIndices = TRUE)
   
     ## Update age map
-      if (is(sim[[AM]], "RasterLayer")) {
-
-        sim[[AM]][fires[["indices"]]] <- 0
-        
-      } else if (is.data.table(sim[[AM]])) {
-        
-        sim[[AM]][px_id %in% fires[["indices"]], age := 0L] 
-        
+      if (is(sim[["ageMap"]], "RasterLayer")) 
+      {
+        sim[["ageMap"]][fires[["indices"]]] <- 0
+      } 
+      else if (is.data.table(sim[["ageMap"]]))
+      {
+        sim[["ageMap"]][px_id %in% fires[["indices"]], age := 0L]
       }
     
     #sim$fireSize[[time(sim) - start(sim) + 1L]] <- tabulate(fires[["id"]])
@@ -208,6 +186,27 @@ fireSenseBurn <- function(sim) {
   if (!is.na(P(sim)$intervalRunModule))
     sim <- scheduleEvent(sim, time(sim) + P(sim)$intervalRunModule, moduleName, "burn")
   
-  sim
+  invisible(sim)
+}
+
+### template for save events
+fireSenseSave <- function(sim) 
+{
+  # ! ----- EDIT BELOW ----- ! #
+  # do stuff for this event
+  sim <- saveFiles(sim)
   
+  # ! ----- STOP EDITING ----- ! #
+  return(invisible(sim))
+}
+
+### template for plot events
+fireSensePlot <- function(sim) 
+{
+  # ! ----- EDIT BELOW ----- ! #
+  # do stuff for this event
+  #Plot("object")
+  
+  # ! ----- STOP EDITING ----- ! #
+  return(invisible(sim))
 }
