@@ -1,7 +1,7 @@
 library(raster)
 library(SpaDES)
 
-modulePath <- "~/Documents/GitHub/McIntire-lab/modulesPrivate/"
+modulePath <- normalizePath("..")
 paths <- list(modulePath = modulePath)
 
 # rasterOptions(maxmemory = 1e8)
@@ -17,14 +17,14 @@ end <- 2010
 inputs <- rbind(
   data.frame(
     objectName = "dataFireSense_SizeFit",
-    file = "C:/Z/Contrats/Eliot/Data/dataFireSense_SizeFit.rds",
+    file = normalizePath("../inputs/dataFireSense_SizeFit.rds"),
     fun = "readRDS",
     package = "base",
     loadTime = start
   ),
   data.frame(
     objectName = "dataFireSense_SizePredict",
-    file = "C:/Z/Contrats/Eliot/Data/dataFireSense_SizePredict_RASTER.rds",
+    file = normalizePath("../inputs/dataFireSense_SizePredict_RASTER.rds"),
     fun = "readRDS",
     package = "base",
     loadTime = start
@@ -41,6 +41,7 @@ parameters <- list(
     trace = 100
   ),
   fireSense_SizePredict = list(
+    initialRunTime =  2001,
     intervalRunModule = 1
   )
 )
@@ -62,7 +63,7 @@ TP_Theta <- stack(lapply(sim$fireSense_SizePredicted, "[[", "theta"))
 # Then we can fit the spread model using the fireSense_SpreadFit module
 inputs <- data.frame(
   objectName = "fireLoc_FireSense_SpreadFit",
-  file = "C:/Z/Contrats/Eliot/Data/fireLoc_FireSense_SpreadFit.shp",
+  file = normalizePath("../inputs/fireLoc_FireSense_SpreadFit.shp"),
   fun = "shapefile",
   package = "raster",
   loadTime = 1
@@ -106,21 +107,21 @@ fireSense_SpreadFitted <- sim$fireSense_SpreadFitted
 inputs <- rbind(
   data.frame(
     objectName = "dataFireSense_FrequencyFit",
-    file = "C:/Z/Contrats/Eliot/Data/dataFireSense_FrequencyFit.rds",
+    file = normalizePath("../inputs/dataFireSense_FrequencyFit.rds"),
     fun = "readRDS",
     package = "base",
     loadTime = 2000
   ),
   data.frame(
     objectName = "dataFireSense_FrequencyPredict",
-    file = "C:/Z/Contrats/Eliot/Data/dataFireSense_SizePredict_RASTER.rds",
+    file = normalizePath("../inputs/dataFireSense_SizePredict_RASTER.rds"),
     fun = "readRDS",
     package = "base",
     loadTime = 2000
   ),
   data.frame(
     objectName = "dataFireSense_EscapeFit",
-    file = "C:/Z/Contrats/Eliot/Data/dataFireSense_EscapeFit.rds",
+    file = normalizePath("../inputs/dataFireSense_EscapeFit.rds"),
     fun = "readRDS",
     package = "base",
     loadTime = 2000
