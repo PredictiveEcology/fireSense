@@ -116,7 +116,7 @@ doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE)
 
 fireSenseInit <- function(sim) 
 {
-  sim <- scheduleEvent(sim, eventTime = P(sim)$initialRunTime, current(sim)$moduleName, "burn", .lowest())
+  sim <- scheduleEvent(sim, eventTime = P(sim)$initialRunTime, current(sim)$moduleName, "burn")
   sim
 }
 
