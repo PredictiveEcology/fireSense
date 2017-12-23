@@ -30,21 +30,21 @@ defineModule(sim, list(
   ),
   inputObjects = rbind(
     expectsInput(
-      objectName = "ignProb",
+      objectName = "ignitionProb",
       objectClass = "RasterLayer",
       sourceURL = NA_character_,
       desc = "A RasterLayer or RasterStack (time series) describing spatial
               variations in ignition probabilities."
     ),
     expectsInput(
-      objectName = "escProb",
+      objectName = "escapeProb",
       objectClass = "RasterLayer",
       sourceURL = NA_character_,
       desc = "A RasterLayer or RasterStack (time series) describing spatial
               variations in escape probabilities."
     ),
     expectsInput(
-      objectName = "sprProb",
+      objectName = "spreadProb",
       objectClass = "RasterLayer",
       sourceURL = NA_character_,
       desc = "A RasterLayer or RasterStack describing spatial variations in the
@@ -123,16 +123,17 @@ fireSenseInit <- function(sim)
 fireSenseBurn <- function(sim) 
 {
   moduleName <- current(sim)$moduleName
+  currentTime <- time(sim, timeunit(sim))
 
   ## Mapping
-    if (!is.null(P(sim)[["mapping"]][["ignProb"]]))
-      sim[["ignProb"]] <- sim[[P(sim)[["mapping"]][["ignProb"]]]]
+    if (!is.null(P(sim)[["mapping"]][["ignitionProb"]]))
+      sim[["ignitionProb"]] <- sim[[P(sim)[["mapping"]][["ignitionProb"]]]]
   
-    if (!is.null(P(sim)[["mapping"]][["escProb"]]))
-      sim[["escProb"]] <- sim[[P(sim)[["mapping"]][["escProb"]]]]
+    if (!is.null(P(sim)[["mapping"]][["escapeProb"]]))
+      sim[["escapeProb"]] <- sim[[P(sim)[["mapping"]][["escapeProb"]]]]
     
-    if (!is.null(P(sim)[["mapping"]][["sprProb"]]))
-      sim[["sprProb"]] <- sim[[P(sim)[["mapping"]][["sprProb"]]]]
+    if (!is.null(P(sim)[["mapping"]][["spreadProb"]]))
+      sim[["spreadProb"]] <- sim[[P(sim)[["mapping"]][["spreadProb"]]]]
     
     if (!is.null(P(sim)[["mapping"]][["ageMap"]]))
       sim[["ageMap"]] <- sim[[P(sim)[["mapping"]][["ageMap"]]]] 
@@ -160,15 +161,32 @@ fireSenseBurn <- function(sim)
     # } else "ageMap"
     
   ## Ignite
-  ignited <- which(rbinom(n = ncell(sim[["ignProb"]]), size = 1, prob = sim[["ignProb"]][]) > 0)
+  ignitionProb <- sim[["ignitionProb"]][[as.character(currentTime)]][]
+  isNA <- is.na(ignitionProb)
+  ignitionProb <- ignitionProb[!isNA]
+    
+  ignited <- which(
+    rbinom(n = length(ignitionProb),
+           size = 1,
+           prob = pmin(ignitionProb, 1)
+    ) > 0
+  )
+  
+  rm(ignitionProb)
   
   ## Escape
-  loci <- ignited[sim[["escProb"]][ignited] > runif(length(ignited))]
+  loci <- ignited[sim[["escapeProb"]][[as.character(currentTime)]][!isNA][ignited] > runif(length(ignited))]
+  rm(ignited)
   
   if (length(loci) > 0L)
   {
     ## Spread
-    fires <- SpaDES.tools::spread(sim[["sprProb"]], loci = loci, spreadProb = sim[["sprProb"]], returnIndices = TRUE)
+    fires <- SpaDES.tools::spread(
+      sim[["spreadProb"]][[as.character(currentTime)]],
+      loci = loci, 
+      spreadProb = sim[["spreadProb"]][[as.character(currentTime)]],
+      returnIndices = TRUE
+    )
   
     ## Update age map
       if (is(sim[["ageMap"]], "RasterLayer")) 
