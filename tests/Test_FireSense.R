@@ -4,7 +4,7 @@ library(SpaDES)
 modulePath <- "~/Documents/GitHub/McIntire-lab/modulesPrivate/"
 paths <- list(modulePath = modulePath)
 
-rasterOptions(maxmemory = 1e8)
+# rasterOptions(maxmemory = 1e8)
 
 # We start by fitting the spread model using the fireSense_SpreadFit module. In
 # order to fit this model we need data about the shape of the fire size
@@ -55,14 +55,52 @@ sim <- simInit(
 )
 
 sim <- spades(sim)
-datafireSense_SpreadFit <- sim$fireSense_SizePredicted
-TP_Beta <- stack(lapply(datafireSense_SpreadFit, "[[", "beta"))
-TP_Theta <- stack(lapply(datafireSense_SpreadFit, "[[", "theta"))
 
-# Then we can fit frequency, escape and spread models using respectively the
-# fireSense_FrequencyFit, fireSense_EscapeFit, fireSense_SpreadFit module and
-# predict using their companion modules (fireSense_*Predict) and finally run
-# fireSense.
+TP_Beta <- stack(lapply(sim$fireSense_SizePredicted, "[[", "beta"))
+TP_Theta <- stack(lapply(sim$fireSense_SizePredicted, "[[", "theta"))
+
+# Then we can fit the spread model using the fireSense_SpreadFit module
+inputs <- data.frame(
+  objectName = "fireLoc_FireSense_SpreadFit",
+  file = "C:/Z/Contrats/Eliot/Data/fireLoc_FireSense_SpreadFit.shp",
+  fun = "shapefile",
+  package = "raster",
+  loadTime = 1
+)
+
+objects <- c("TP_Beta", "TP_Theta")
+
+# Define module parameters
+parameters <- list(
+  fireSense_SpreadFit = list(
+    formula = ~ TP_Beta + TP_Theta,
+    data = c("TP_Beta", "TP_Theta"),
+    lower = c(.05, .1, .01, .3, 0.001, 0.001, 0.001),
+    upper = c(.1, .2, .2, 4, .3, .3, .3),
+    nCores = 1,
+    trace = 1,
+    itermax = 5
+  )
+)
+
+sim <- simInit(
+  times = list(start = 1, end = 1, timeunit = "year"),
+  modules = list("fireSense_SpreadFit"),
+  paths = paths,
+  inputs = inputs,
+  objects = objects,
+  params = parameters
+)
+
+sim <- spades(sim)
+fireSense_SpreadFitted <- sim$fireSense_SpreadFitted
+
+
+# Then we can fit frequency and escape models using respectively the 
+# fireSense_FrequencyFit and fireSense_EscapeFit modules and predict using their
+# companion modules (fireSense_*Predict). Then predict spread probabilities 
+# using fireSense_SpreadPredict and finally run fireSense.
+
 
 # Define from where and how data will be loaded in the simList environment
 inputs <- rbind(
@@ -71,30 +109,27 @@ inputs <- rbind(
     file = "C:/Z/Contrats/Eliot/Data/dataFireSense_FrequencyFit.rds",
     fun = "readRDS",
     package = "base",
-    loadTime = 1
+    loadTime = 2000
+  ),
+  data.frame(
+    objectName = "dataFireSense_FrequencyPredict",
+    file = "C:/Z/Contrats/Eliot/Data/dataFireSense_SizePredict_RASTER.rds",
+    fun = "readRDS",
+    package = "base",
+    loadTime = 2000
   ),
   data.frame(
     objectName = "dataFireSense_EscapeFit",
     file = "C:/Z/Contrats/Eliot/Data/dataFireSense_EscapeFit.rds",
     fun = "readRDS",
     package = "base",
-    loadTime = 1
-  ),
-  data.frame(
-    objectName = "fireLoc_FireSense_SpreadFit",
-    file = "C:/Z/Contrats/Eliot/Data/fireLoc_FireSense_SpreadFit.shp",
-    fun = "shapefile",
-    package = "raster",
-    loadTime = 1
-  ),
-  data.frame(
-    objectName = "dataFireSense_SpreadPredict",
-    file = "C:/Z/Contrats/Eliot/Data/dataFireSense_SizePredict_RASTER.rds",
-    fun = "readRDS",
-    package = "base",
-    loadTime = 1
+    loadTime = 2000
   )
 )
+
+TP_Beta <- setNames(unstack(TP_Beta), nm = 2000:2010)
+TP_Theta <- setNames(unstack(TP_Theta), nm = 2000:2010)
+objects <- c("fireSense_SpreadFitted", "TP_Beta", "TP_Theta")
 
 # Define module parameters
 parameters <- list(
@@ -112,32 +147,27 @@ parameters <- list(
   fireSense_EscapeFit = list(
     formula = cbind(escaped, nFires) ~ MDC_07 + hw + dt + ot + wt
   ),
-  fireSense_SpreadFit = list(
-    formula = ~ TP_Beta + TP_Theta,
-    data = c("TP_Beta", "TP_Theta"),
-    lower = c(.05, .1, .01, .3, 0.001, 0.001, 0.001),
-    upper = c(.4, 10, .2, 4, .3, .3, .3),
-    nCores = 1,
-    itermax = 25
+  fireSense_EscapePredict = list(
+    data = "dataFireSense_FrequencyPredict"
+  ),
+  fireSense_SpreadPredict = list(
+    data = c("dataFireSense_FrequencyPredict", "TP_Beta", "TP_Theta")
   ),
   fireSense = list(
     mapping = list(
-      ignProb = "ignitionProb",
-      escProb = "fireSense_EscapePredicted",
-      sprProb = "fireSense_SpreadPredicted"
+      ignitionProb = "fireSense_FrequencyPredicted",
+      escapeProb = "fireSense_EscapePredicted",
+      spreadProb = "fireSense_SpreadPredicted"
     )
   )
 )
 
-objects <- c("TP_Beta", "TP_Theta")
-
 sim <- simInit(
-  times = list(start = 1, end = 2, timeunit = "year"),
+  times = list(start = 2000, end = 2010, timeunit = "year"),
   modules = list("fireSense_FrequencyFit",
                  "fireSense_FrequencyPredict",
                  "fireSense_EscapeFit",
                  "fireSense_EscapePredict",
-                 "fireSense_SpreadFit",
                  "fireSense_SpreadPredict",
                  "fireSense"),
   paths = paths,
@@ -146,6 +176,7 @@ sim <- simInit(
   params = parameters
 )
 
-spades(sim)
+sim <- spades(sim)
+
 
 hist(mySim$trajAgeMap$age)
