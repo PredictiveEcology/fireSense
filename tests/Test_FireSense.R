@@ -163,7 +163,7 @@ parameters <- list(
 )
 
 sim <- simInit(
-  times = list(start = 2000, end = 2010, timeunit = "year"),
+  times = list(start = start, end = end, timeunit = "year"),
   modules = list("fireSense_FrequencyFit",
                  "fireSense_FrequencyPredict",
                  "fireSense_EscapeFit",
