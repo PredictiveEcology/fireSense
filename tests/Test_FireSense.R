@@ -41,8 +41,8 @@ parameters <- list(
     trace = 100
   ),
   fireSense_SizePredict = list(
-    initialRunTime =  2001,
-    intervalRunModule = 1
+    .runInitialTime =  2001,
+    .runInterval = 1
   )
 )
 

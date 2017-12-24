@@ -26,8 +26,8 @@ downloadModule(moduleName, path = workingDirectory)
 Name|Default|Description
 ----|:-------|---------------------------------------------------------------------
 `mapping`|`NULL`|optional named vector or list of character strings mapping one or more inputs required by the module to objects loaded in the simList environment.
-`initialRunTime`|`start(simList)`|when to start this module? By default, the start time of the simulation.
-`intervalRunModule`|`NA`|optional. Interval between two runs of this module, expressed in units of simulation time.
+`.runInitialTime`|`start(simList)`|when to start this module? By default, the start time of the simulation.
+`.runInterval`|`NA`|optional. Interval between two runs of this module, expressed in units of simulation time.
 |||
 
 ## Usage example

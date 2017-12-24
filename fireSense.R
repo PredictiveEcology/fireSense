@@ -21,10 +21,10 @@ defineModule(sim, list(
                     desc = "optional named vector or list of character strings 
                             mapping one or more inputs required by the module to
                             objects loaded in the simList environment."),
-    defineParameter(name = "initialRunTime", class = "numeric", default = start(sim),
+    defineParameter(name = ".runInitialTime", class = "numeric", default = start(sim),
                     desc = "when to start this module? By default, the start
                             time of the simulation."),
-    defineParameter(name = "intervalRunModule", class = "numeric", default = NA, 
+    defineParameter(name = ".runInterval", class = "numeric", default = NA, 
                     desc = "optional. Interval between two runs of this module,
                             expressed in units of simulation time.")
   ),
@@ -116,7 +116,7 @@ doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE)
 
 fireSenseInit <- function(sim) 
 {
-  sim <- scheduleEvent(sim, eventTime = P(sim)$initialRunTime, current(sim)$moduleName, "burn")
+  sim <- scheduleEvent(sim, eventTime = P(sim)$.runInitialTime, current(sim)$moduleName, "burn")
   sim
 }
 
@@ -201,8 +201,8 @@ fireSenseBurn <- function(sim)
     #sim$fireSize[[time(sim) - start(sim) + 1L]] <- tabulate(fires[["id"]])
   }
   
-  if (!is.na(P(sim)$intervalRunModule))
-    sim <- scheduleEvent(sim, time(sim) + P(sim)$intervalRunModule, moduleName, "burn")
+  if (!is.na(P(sim)$.runInterval))
+    sim <- scheduleEvent(sim, time(sim) + P(sim)$.runInterval, moduleName, "burn")
   
   invisible(sim)
 }
