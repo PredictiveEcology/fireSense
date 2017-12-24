@@ -161,7 +161,7 @@ fireSenseBurn <- function(sim)
     # } else "ageMap"
     
   ## Ignite
-  ignitionProb <- sim[["ignitionProb"]][[as.character(currentTime)]][]
+  ignitionProb <- sim[["ignitionProb"]][]
   isNA <- is.na(ignitionProb)
   ignitionProb <- ignitionProb[!isNA]
     
@@ -175,16 +175,16 @@ fireSenseBurn <- function(sim)
   rm(ignitionProb)
   
   ## Escape
-  loci <- ignited[sim[["escapeProb"]][[as.character(currentTime)]][!isNA][ignited] > runif(length(ignited))]
+  loci <- ignited[sim[["escapeProb"]][!isNA][ignited] > runif(length(ignited))]
   rm(ignited)
   
   if (length(loci) > 0L)
   {
     ## Spread
     fires <- SpaDES.tools::spread(
-      sim[["spreadProb"]][[as.character(currentTime)]],
+      sim[["spreadProb"]],
       loci = loci, 
-      spreadProb = sim[["spreadProb"]][[as.character(currentTime)]],
+      spreadProb = sim[["spreadProb"]],
       returnIndices = TRUE
     )
   
