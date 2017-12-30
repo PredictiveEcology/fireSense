@@ -73,13 +73,6 @@ defineModule(sim, list(
       objectClass = "RasterLayer",
       desc = "A RasterLayer describing spatial variations in the age of forest
               stands at the end of the simulation."
-    ),
-    createsOutput(
-      objectName = "vegMap",
-      objectClass = "RasterStack",
-      desc = "A RasterStack describing the spatial distribution of land-cover
-              classes at the end of the simulation. Each layer describes the
-              proportion of each cell covered by a specific land-cover class."
     )
   )
 ))
@@ -136,29 +129,7 @@ fireSenseBurn <- function(sim)
       sim[["spreadProb"]] <- sim[[P(sim)[["mapping"]][["spreadProb"]]]]
     
     if (!is.null(P(sim)[["mapping"]][["ageMap"]]))
-      sim[["ageMap"]] <- sim[[P(sim)[["mapping"]][["ageMap"]]]] 
-    # 
-    # iP <- sim[[
-    #   if (tryCatch(!is.null(), error = function(e) FALSE)) {
-    #     P(sim)[["mapping"][["ignitProb"]]
-    #   } else "ignitProb"
-    # ]]
-    # 
-    # eP <- sim[[
-    #   if (tryCatch(!is.null(P(sim)[["mapping"][["escapeProb"]]), error = function(e) FALSE)) {
-    #     P(sim)[["mapping"][["escapeProb"]]
-    #   } else "escapeProb"
-    # ]]
-    # 
-    # sP <- sim[[
-    #   if (tryCatch(!is.null(P(sim)[["mapping"][["spreadProb"]]), error = function(e) FALSE)) {
-    #     P(sim)[["mapping"][["spreadProb"]]
-    #   } else "spreadProb"
-    # ]]
-    # 
-    # AM <- if (tryCatch(!is.null(P(sim)[["mapping"][["ageMap"]]), error = function(e) FALSE)) {
-    #   P(sim)[["mapping"][["ageMap"]]
-    # } else "ageMap"
+      sim[["ageMap"]] <- sim[[P(sim)[["mapping"]][["ageMap"]]]]
     
   ## Ignite
   ignitionProb <- sim[["ignitionProb"]][]
@@ -187,7 +158,7 @@ fireSenseBurn <- function(sim)
       spreadProb = sim[["spreadProb"]],
       returnIndices = TRUE
     )
-  
+    
     ## Update age map
       if (is(sim[["ageMap"]], "RasterLayer")) 
       {
@@ -202,7 +173,7 @@ fireSenseBurn <- function(sim)
   }
   
   if (!is.na(P(sim)$.runInterval))
-    sim <- scheduleEvent(sim, time(sim) + P(sim)$.runInterval, moduleName, "burn")
+    sim <- scheduleEvent(sim, currentTime + P(sim)$.runInterval, moduleName, "burn")
   
   invisible(sim)
 }
