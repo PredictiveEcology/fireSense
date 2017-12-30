@@ -2,7 +2,10 @@ library(raster)
 library(SpaDES)
 
 modulePath <- normalizePath("..")
-paths <- list(modulePath = modulePath)
+paths <- list(
+  modulePath = modulePath,
+  outputPath = file.path(modulePath, "outputs")
+)
 
 # rasterOptions(maxmemory = 1e8)
 
@@ -22,14 +25,22 @@ inputs <- rbind(
     package = "base",
     loadTime = start
   ),
-  data.frame(
-    objectName = "dataFireSense_SizePredict",
-    file = normalizePath("../inputs/dataFireSense_SizePredict_RASTER.rds"),
-    fun = "readRDS",
-    package = "base",
-    loadTime = start
+  do.call(
+    "rbind",
+    lapply(
+      start:end,
+      function(year)
+        data.frame(
+          objectName = "dataFireSense_SizePredict", 
+          file = normalizePath(paste0("../inputs/dataFireSense_Predict_RASTER_", year, ".rds")),
+          fun = "readRDS",
+          package = "base",
+          loadTime = year
+        )
+    )
   )
 )
+
 
 # Define module parameters
 parameters <- list(
@@ -41,8 +52,9 @@ parameters <- list(
     trace = 100
   ),
   fireSense_SizePredict = list(
-    .runInitialTime = 2000,
-    .runInterval = 1
+    .runInterval = 1,
+    .saveInitialTime = start,
+    .saveInterval = 1
   )
 )
 
@@ -57,8 +69,16 @@ sim <- simInit(
 
 sim <- spades(sim)
 
-TP_Beta <- stack(lapply(sim$fireSense_SizePredicted, "[[", "beta"))
-TP_Theta <- stack(lapply(sim$fireSense_SizePredicted, "[[", "theta"))
+lapply(
+  start:end,
+  function(year)
+  {
+    readRDS(paste0("../outputs/fireSense_SizePredicted_year", year, ".rds"))
+  }
+) -> l
+
+TP_Beta <- stack(lapply(l, "[[", "beta"))
+TP_Theta <- stack(lapply(l, "[[", "theta"))
 
 # Then we can fit the spread model using the fireSense_SpreadFit module
 inputs <- data.frame(
@@ -80,7 +100,7 @@ parameters <- list(
     upper = c(.1, .2, .2, 4, .3, .3, .3),
     nCores = 1,
     trace = 1,
-    itermax = 5
+    itermax = 1
   )
 )
 
@@ -102,6 +122,20 @@ fireSense_SpreadFitted <- sim$fireSense_SpreadFitted
 # companion modules (fireSense_*Predict). Then predict spread probabilities 
 # using fireSense_SpreadPredict and finally run fireSense.
 
+list2env(
+  setNames(
+    unstack(TP_Beta),
+    nm = paste0("TP_Beta", start:end)
+  ),
+  envir = globalenv()
+)
+list2env(
+  setNames(
+    unstack(TP_Theta),
+    nm = paste0("TP_Theta", start:end)
+  ),
+  envir = globalenv()
+)
 
 # Define from where and how data will be loaded in the simList environment
 inputs <- rbind(
@@ -110,27 +144,63 @@ inputs <- rbind(
     file = normalizePath("../inputs/dataFireSense_FrequencyFit.rds"),
     fun = "readRDS",
     package = "base",
-    loadTime = 2000
+    arguments = NA,
+    loadTime = start
   ),
-  data.frame(
-    objectName = "dataFireSense_FrequencyPredict",
-    file = normalizePath("../inputs/dataFireSense_SizePredict_RASTER.rds"),
-    fun = "readRDS",
-    package = "base",
-    loadTime = 2000
+  do.call(
+    "rbind",
+    lapply(
+      start:end,
+      function(year)
+        data.frame(
+          objectName = "dataFireSense_FrequencyPredict", 
+          file = normalizePath(paste0("../inputs/dataFireSense_Predict_RASTER_", year, ".rds")),
+          fun = "readRDS",
+          package = "base",
+          arguments = NA,
+          loadTime = year
+        )
+    )
   ),
   data.frame(
     objectName = "dataFireSense_EscapeFit",
     file = normalizePath("../inputs/dataFireSense_EscapeFit.rds"),
     fun = "readRDS",
     package = "base",
-    loadTime = 2000
-  )
+    arguments = NA,
+    loadTime = start
+  ),
+  {
+    # Note 'arguments' must be a list of NROW(inputs), with each element itself being a list,
+    #  which is passed to do.call(fun[x], arguments[[x]]), where x is row number, one at a time
+    args <- c(
+      lapply(
+        start:end,
+        function(x)
+        {
+          list(x = paste0("TP_Beta", x), envir = globalenv())
+        }
+      ),
+      lapply(
+        start:end,
+        function(x)
+        {
+          list(x = paste0("TP_Theta", x), envir = globalenv())
+        }
+      )
+    )
+    data.frame(
+      objectName = c("TP_Beta", "TP_Theta"),
+      file = NA,
+      fun = "get",
+      package = "base",
+      arguments = I(args),
+      loadTime = start:end
+    )
+  }
 )
 
-TP_Beta <- setNames(unstack(TP_Beta), nm = 2000:2010)
-TP_Theta <- setNames(unstack(TP_Theta), nm = 2000:2010)
-objects <- c("fireSense_SpreadFitted", "TP_Beta", "TP_Theta")
+objects <- c("fireSense_SpreadFitted")
 
 # Define module parameters
 parameters <- list(
@@ -163,21 +233,24 @@ parameters <- list(
   )
 )
 
+modules <- list(
+  "fireSense_FrequencyFit",
+  "fireSense_FrequencyPredict",
+  "fireSense_EscapeFit",
+  "fireSense_EscapePredict",
+  "fireSense_SpreadPredict",
+  "fireSense"
+)
+
 sim <- simInit(
   times = list(start = start, end = end, timeunit = "year"),
-  modules = list("fireSense_FrequencyFit",
-                 "fireSense_FrequencyPredict",
-                 "fireSense_EscapeFit",
-                 "fireSense_EscapePredict",
-                 "fireSense_SpreadPredict",
-                 "fireSense"),
+  modules = modules,
   paths = paths,
   inputs = inputs,
   objects = objects,
-  params = parameters
+  params = parameters,
+  loadOrder = unlist(modules)
 )
 
 sim <- spades(sim)
 
-
-hist(mySim$trajAgeMap$age)
