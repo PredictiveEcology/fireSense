@@ -160,14 +160,14 @@ fireSenseBurn <- function(sim)
     )
     
     ## Update age map
-      if (is(sim[["ageMap"]], "RasterLayer")) 
-      {
-        sim[["ageMap"]][fires[["indices"]]] <- 0
-      } 
-      else if (is.data.table(sim[["ageMap"]]))
-      {
-        sim[["ageMap"]][px_id %in% fires[["indices"]], age := 0L]
-      }
+      # if (is(sim[["ageMap"]], "RasterLayer")) 
+      # {
+      #   sim[["ageMap"]][fires[["indices"]]] <- 0
+      # } 
+      # else if (is.data.table(sim[["ageMap"]]))
+      # {
+      #   sim[["ageMap"]][px_id %in% fires[["indices"]], age := 0L]
+      # }
     
     #sim$fireSize[[time(sim) - start(sim) + 1L]] <- tabulate(fires[["id"]])
   }
