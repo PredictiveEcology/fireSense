@@ -57,27 +57,10 @@ defineModule(sim, list(
       sourceURL = NA_character_,
       desc = "A RasterLayer or RasterStack describing spatial variations in the
               spread probabilities."
-    ),
-    expectsInput(
-      objectName = "ageMap",
-      objectClass = "RasterLayer",
-      sourceURL = NA_character_,
-      desc = "A RasterLayer describing spatial variations in the age of forest 
-              stands at the start of the simulation."
-    ),
-    expectsInput(
-      objectName = "vegMap",
-      objectClass = "RasterStack",
-      sourceURL = NA_character_,
-      desc = "A RasterStack describing the spatial distribution of land-cover 
-              classes at the start of the simulation. There should be one layer
-              per land-cover class. Each layer should describe the proportion of
-              each cell covered by a specific land-cover class."
     )
   ),
   outputObjects = rbind(
     createsOutput(
-      objectName = "ageMap",
       objectName = "burnMap",
       objectClass = "RasterLayer",
       desc = "A RasterLayer describing how which pixels burned this timestep."
@@ -139,9 +122,6 @@ fireSenseBurn <- function(sim)
     if (!is.null(P(sim)[["mapping"]][["spreadProb"]]))
       sim[["spreadProb"]] <- sim[[P(sim)[["mapping"]][["spreadProb"]]]]
     
-    if (!is.null(P(sim)[["mapping"]][["ageMap"]]))
-      sim[["ageMap"]] <- sim[[P(sim)[["mapping"]][["ageMap"]]]]
-    
   ## Ignite
   ignitionProb <- sim[["ignitionProb"]][]
   isNA <- is.na(ignitionProb)
@@ -170,15 +150,6 @@ fireSenseBurn <- function(sim)
       returnIndices = TRUE
     )
     
-    ## Update age map
-      # if (is(sim[["ageMap"]], "RasterLayer")) 
-      # {
-      #   sim[["ageMap"]][fires[["indices"]]] <- 0
-      # } 
-      # else if (is.data.table(sim[["ageMap"]]))
-      # {
-      #   sim[["ageMap"]][px_id %in% fires[["indices"]], age := 0L]
-      # }
     sim$burnMap <- raster(sim[["spreadProb"]])
     sim$burnMap[fires$indices] <- 1
     
