@@ -28,6 +28,10 @@ Name|Default|Description
 `mapping`|`NULL`|optional named vector or list of character strings mapping one or more inputs required by the module to objects loaded in the simList environment.
 `.runInitialTime`|`start(simList)`|when to start this module? By default, the start time of the simulation.
 `.runInterval`|`NA`|optional. Interval between two runs of this module, expressed in units of simulation time.
+`.saveInitialTime`|`NA`|optional. When to start saving output to a file.
+`.saveInterval`|`NA`|optional. Interval between save events.
+`.plotInitialTime`|`NA`|optional. When to start plotting.
+`.plotInterval`|`NA`|optional. Interval between plot events.
 |||
 
 ## Usage example
@@ -52,17 +56,14 @@ ignitProb <- gaussMap(r, scale = 10, var = .0001, speedup = nx/5e2, inMemory = T
 escapeProb <- gaussMap(r, scale = 50, var = .01, speedup = nx/5e2, inMemory = TRUE)
 
 # Create a map of spread probabilities
-spreadProb <- gaussMap(r, scale = 300, var = .05, speedup = nx/5e2, inMemory = TRUE)
-
-# Create a map of stand age
-random_ageMap <- gaussMap(r, scale = 300, var = 1e4, speedup = nx/5e2, inMemory = TRUE) %>% calc(function(x)round(x+1,0))
+spreadProbabilities <- gaussMap(r, scale = 300, var = .05, speedup = nx/5e2, inMemory = TRUE)
 
 #outputDir <- file.path(tempdir(), "outputs")
 times <- list(start = 1, end = 100, timeunit = "year")
 parameters <- list(
-  fireSense = list(mapping = list(ageMap = "random_ageMap") # One can use mapping to map data objects in the
-                                                            # simList environment to data required by the module.
-                                                            # Here random_ageMap is mapped to ageMap.  
+  fireSense = list(mapping = list(spreadProb = "spreadProbabilities") # One can use mapping to map data objects in the
+                                                                      # simList environment to data required by the module.
+                                                                      # Here random_ageMap is mapped to ageMap.  
   )
 )
 
@@ -87,28 +88,27 @@ spades(mySim)
 - ignite fires
 - determine which fires escape
 - spread escaped fires
-- update age map
+- save
+- plot
 
 ## Plotting
-TODO: Write what is plotted. (there is currently nothing saved, but this may change in the future)
+- **Burn map**: Pixels burned this timestep.
+- **Cumulative burn map**: Number of times each pixel burned during the simulation..
 
 ## Saving
-TODO: Write what is saved. (there is currently nothing saved, but this may change in the future)
+- **burnMap**: A RasterLayer describing how which pixels burned this timestep.
+- **burnMapCumul**: A RasterLayer describing how many times each pixel burned over the course of the simulation.
+
 
 # Data dependencies
 ## Input data
 - **ignitProb**: a RasterLayer or RasterStack (time series) describing spatial variations in ignition probabilities.
 - **escapeProb**: a RasterLayer or RasterStack (time series) describing spatial variations in escape probabilities.
 - **spreadProb**: a RasterLayer or RasterStack (time series) describing spatial variations in spread probabilities.
-- **ageMap**: a RasterLayer describing spatial variations in the age of forest stands at the start of the simulation.
 - **vegMap**: A RasterStack describing the spatial distribution of land-cover classes at the start of the simulation. There should be one layer per land-cover class. Each layer should describe the proportion of each cell covered by a specific land-cover class.
 
 ## Output data
-<!-- TODO - number of ignitions
-- number of fires that escaped
-- fire sizes-->
-- **ageMap**: a RasterLayer describing spatial variations in the age of forest stands at the end of the simulation.
-- **vegMap**: a RasterStack describing the spatial distribution of land-cover classes at the end of the simulation. Each layer describes the proportion of each cell covered by a specific land-cover class.
+see [Saving](#saving).
 
 # Links to other modules
 This module should be coupled with a dynamic vegetation model.
