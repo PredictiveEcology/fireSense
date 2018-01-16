@@ -26,7 +26,15 @@ defineModule(sim, list(
                             time of the simulation."),
     defineParameter(name = ".runInterval", class = "numeric", default = NA, 
                     desc = "optional. Interval between two runs of this module,
-                            expressed in units of simulation time.")
+                            expressed in units of simulation time."),
+    defineParameter(name = ".saveInitialTime", class = "numeric", default = NA, 
+                    desc = "optional. When to start saving output to a file."),
+    defineParameter(name = ".saveInterval", class = "numeric", default = NA, 
+                    desc = "optional. Interval between save events."),
+    defineParameter(name = ".plotInitialTime", class = "numeric", default = NA, 
+                    desc = "optional. When to start plotting."),
+    defineParameter(name = ".plotInterval", class = "numeric", default = NA, 
+                    desc = "optional. Interval between plot events."),
   ),
   inputObjects = rbind(
     expectsInput(
@@ -70,9 +78,15 @@ defineModule(sim, list(
   outputObjects = rbind(
     createsOutput(
       objectName = "ageMap",
+      objectName = "burnMap",
       objectClass = "RasterLayer",
-      desc = "A RasterLayer describing spatial variations in the age of forest
-              stands at the end of the simulation."
+      desc = "A RasterLayer describing how which pixels burned this timestep."
+    ),
+    createsOutput(
+      objectName = "burnMapCumul",
+      objectClass = "RasterLayer",
+      desc = "A RasterLayer describing how many times each pixel burned over the
+              course of the simulation."
     )
   )
 ))
@@ -86,20 +100,8 @@ doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE)
     eventType,
     init = { sim <- sim$fireSenseInit(sim) },
     burn = { sim <- sim$fireSenseBurn(sim) },
-    save = {
-      # ! ----- EDIT BELOW ----- ! #
-      # do stuff for this event
-      
-      # e.g., call your custom functions/methods here
-      # you can define your own methods below this `doEvent` function
-      
-      # schedule future event(s)
-      
-      # e.g.,
-      # sim <- scheduleEvent(sim, time(sim) + increment, "fireSense_EscapeFit", "save")
-      
-      # ! ----- STOP EDITING ----- ! #
-    },
+    save = { sim <- sim$fireSenseSave(sim) },
+    plot = { sim <- sim$fireSensePlot(sim) },
     warning(paste("Undefined event type: '", current(sim)[1, "eventType", with = FALSE],
                   "' in module '", current(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
   )
@@ -109,7 +111,16 @@ doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE)
 
 fireSenseInit <- function(sim) 
 {
-  sim <- scheduleEvent(sim, eventTime = P(sim)$.runInitialTime, current(sim)$moduleName, "burn")
+  moduleName <- current(sim)$moduleName
+  
+  sim <- scheduleEvent(sim, eventTime = P(sim)$.runInitialTime, moduleName, "burn")
+  
+  if (!is.na(P(sim)$.saveInitialTime))
+    sim <- scheduleEvent(sim, P(sim)$.saveInitialTime, moduleName, "save", .last() + 1)
+  
+  if (!is.na(P(sim)$.plotInitialTime))
+    sim <- scheduleEvent(sim, P(sim)$.saveInitialTime, moduleName, "plot", .last())
+  
   sim
 }
 
@@ -168,6 +179,16 @@ fireSenseBurn <- function(sim)
       # {
       #   sim[["ageMap"]][px_id %in% fires[["indices"]], age := 0L]
       # }
+    sim$burnMap <- raster(sim[["spreadProb"]])
+    sim$burnMap[fires$indices] <- 1
+    
+    if (is.null(sim[["burnMapCumul"]]))
+    {
+      sim$burnMapCumul <- sim[["spreadProb"]]
+      sim$burnMapCumul[!is.na(sim$burnMapCumul[])] <- 0
+    }
+    
+    sim$burnMapCumul[fires$indices] <- sim$burnMapCumul[fires$indices] + 1
     
     #sim$fireSize[[time(sim) - start(sim) + 1L]] <- tabulate(fires[["id"]])
   }
@@ -178,24 +199,24 @@ fireSenseBurn <- function(sim)
   invisible(sim)
 }
 
-### template for save events
+
 fireSenseSave <- function(sim) 
 {
-  # ! ----- EDIT BELOW ----- ! #
-  # do stuff for this event
   sim <- saveFiles(sim)
   
-  # ! ----- STOP EDITING ----- ! #
-  return(invisible(sim))
+  if (!is.na(P(sim)$.saveInterval))
+    sim <- scheduleEvent(sim, time(sim, timeunit(sim)) + P(sim)$.saveInterval, current(sim)$moduleName, "save")
+  
+  invisible(sim)
 }
 
-### template for plot events
+
 fireSensePlot <- function(sim) 
 {
-  # ! ----- EDIT BELOW ----- ! #
-  # do stuff for this event
-  #Plot("object")
+  Plot(sim$burnMap, sim$burnMapCumul, title = c("Burn map", "Cumulative burn map"))
   
-  # ! ----- STOP EDITING ----- ! #
-  return(invisible(sim))
+  if (!is.na(P(sim)$.plotInterval))
+    sim <- scheduleEvent(sim, time(sim, timeunit(sim)) + P(sim)$.plotInterval, current(sim)$moduleName, "plot")
+  
+  invisible(sim)
 }
