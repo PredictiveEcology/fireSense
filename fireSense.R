@@ -34,7 +34,7 @@ defineModule(sim, list(
     defineParameter(name = ".plotInitialTime", class = "numeric", default = NA, 
                     desc = "optional. When to start plotting."),
     defineParameter(name = ".plotInterval", class = "numeric", default = NA, 
-                    desc = "optional. Interval between plot events."),
+                    desc = "optional. Interval between plot events.")
   ),
   inputObjects = rbind(
     expectsInput(
