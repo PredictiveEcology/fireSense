@@ -20,9 +20,8 @@ end <- 2010
 inputs <- rbind(
   data.frame(
     objectName = "dataFireSense_SizeFit",
-    file = normalizePath("../inputs/dataFireSense_SizeFit.rds"),
-    fun = "readRDS",
-    package = "base",
+    files = normalizePath("data/dataFireSense_SizeFit.rds"),
+    functions = "base::readRDS",
     loadTime = start
   ),
   do.call(
@@ -32,21 +31,19 @@ inputs <- rbind(
       function(year)
         data.frame(
           objectName = "dataFireSense_SizePredict", 
-          file = normalizePath(paste0("../inputs/dataFireSense_Predict_RASTER_", year, ".rds")),
-          fun = "readRDS",
-          package = "base",
+          files = normalizePath(paste0("data/dataFireSense_SizePredict_RASTER_", year, ".rds")),
+          functions = "base::readRDS",
           loadTime = year
         )
     )
   )
 )
 
-
 # Define module parameters
 parameters <- list(
   fireSense_SizeFit = list(
-    formula = list(beta = fireSize ~ hw + ot + dt + wt + MDC_07,
-                   theta = fireSize ~ hw + ot + dt + wt + MDC_07),
+    formula = list(beta = fireSize ~ cn + ot + dt + wt + MDC_07,
+                   theta = fireSize ~ cn + ot + dt + wt + MDC_07),
     a = 1,
     itermax = 5000,
     trace = 100
