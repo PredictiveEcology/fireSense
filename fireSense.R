@@ -81,10 +81,10 @@ doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE)
 {
   switch(
     eventType,
-    init = { sim <- sim$fireSenseInit(sim) },
-    burn = { sim <- sim$fireSenseBurn(sim) },
-    save = { sim <- sim$fireSenseSave(sim) },
-    plot = { sim <- sim$fireSensePlot(sim) },
+    init = { sim <- init(sim) },
+    burn = { sim <- burn(sim) },
+    save = { sim <- save(sim) },
+    plot = { sim <- plot(sim) },
     warning(paste("Undefined event type: '", current(sim)[1, "eventType", with = FALSE],
                   "' in module '", current(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
   )
@@ -92,7 +92,7 @@ doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE)
 }
 
 
-fireSenseInit <- function(sim) 
+init <- function(sim) 
 {
   moduleName <- current(sim)$moduleName
   
@@ -107,7 +107,7 @@ fireSenseInit <- function(sim)
   sim
 }
 
-fireSenseBurn <- function(sim) 
+burn <- function(sim) 
 {
   moduleName <- current(sim)$moduleName
   currentTime <- time(sim, timeunit(sim))
@@ -171,7 +171,7 @@ fireSenseBurn <- function(sim)
 }
 
 
-fireSenseSave <- function(sim) 
+save <- function(sim) 
 {
   sim <- saveFiles(sim)
   
@@ -182,7 +182,7 @@ fireSenseSave <- function(sim)
 }
 
 
-fireSensePlot <- function(sim) 
+plot <- function(sim) 
 {
   Plot(sim$burnMap, sim$burnMapCumul, title = c("Burn map", "Cumulative burn map"))
   
