@@ -1,6 +1,8 @@
 library(raster)
 library(SpaDES)
 
+# options(spades.moduleCodeChecks = TRUE)
+
 modulePath <- normalizePath("..")
 paths <- list(
   modulePath = modulePath,
@@ -20,7 +22,7 @@ end <- 2010
 inputs <- rbind(
   data.frame(
     objectName = "dataFireSense_SizeFit",
-    files = normalizePath("data/dataFireSense_SizeFit.rds"),
+    files = normalizePath("tests/data/dataFireSense_SizeFit.rds"),
     functions = "base::readRDS",
     loadTime = start
   ),
@@ -31,7 +33,7 @@ inputs <- rbind(
       function(year)
         data.frame(
           objectName = "dataFireSense_SizePredict", 
-          files = normalizePath(paste0("data/dataFireSense_SizePredict_RASTER_", year, ".rds")),
+          files = normalizePath(paste0("tests/data/dataFireSense_SizePredict_RASTER_", year, ".rds")),
           functions = "base::readRDS",
           loadTime = year
         )
@@ -64,25 +66,34 @@ sim <- simInit(
   params = parameters
 )
 
-sim <- spades(sim)
+sim <- spades(sim) # Outputs tapered Pareto's Beta and Theta maps for each year
 
-lapply(
-  start:end,
-  function(year)
-  {
-    readRDS(paste0("../outputs/fireSense_SizePredicted_year", year, ".rds"))
-  }
-) -> l
+# Test passing inputs as objects
+TP_Beta <- stack(
+  lapply(
+    start:end,
+    function(year)
+    {
+      readRDS(paste0("../outputs/fireSense_SizePredicted_Beta_year", year, ".rds"))
+    }
+  )
+)
 
-TP_Beta <- stack(lapply(l, "[[", "beta"))
-TP_Theta <- stack(lapply(l, "[[", "theta"))
+TP_Theta <- stack(
+  lapply(
+    start:end,
+    function(year)
+    {
+      readRDS(paste0("../outputs/fireSense_SizePredicted_Theta_year", year, ".rds"))
+    }
+  )
+)
 
 # Then we can fit the spread model using the fireSense_SpreadFit module
 inputs <- data.frame(
   objectName = "fireLoc_FireSense_SpreadFit",
-  file = normalizePath("../inputs/fireLoc_FireSense_SpreadFit.shp"),
-  fun = "shapefile",
-  package = "raster",
+  files = normalizePath("tests/data/fireLoc_FireSense_SpreadFit.shp"),
+  functions = "raster::shapefile",
   loadTime = 1
 )
 
@@ -138,9 +149,8 @@ list2env(
 inputs <- rbind(
   data.frame(
     objectName = "dataFireSense_FrequencyFit",
-    file = normalizePath("../inputs/dataFireSense_FrequencyFit.rds"),
-    fun = "readRDS",
-    package = "base",
+    file = normalizePath("tests/data/dataFireSense_FrequencyFit.rds"),
+    functions = "base::readRDS",
     arguments = NA,
     loadTime = start
   ),
@@ -150,10 +160,9 @@ inputs <- rbind(
       start:end,
       function(year)
         data.frame(
-          objectName = "dataFireSense_FrequencyPredict", 
-          file = normalizePath(paste0("../inputs/dataFireSense_Predict_RASTER_", year, ".rds")),
-          fun = "readRDS",
-          package = "base",
+          objectName = "tests/dataFireSense_FrequencyPredict", 
+          file = normalizePath(paste0("tests/data/dataFireSense_SizePredict_RASTER_", year, ".rds")),
+          functions = "base::readRDS",
           arguments = NA,
           loadTime = year
         )
@@ -161,9 +170,8 @@ inputs <- rbind(
   ),
   data.frame(
     objectName = "dataFireSense_EscapeFit",
-    file = normalizePath("../inputs/dataFireSense_EscapeFit.rds"),
-    fun = "readRDS",
-    package = "base",
+    file = normalizePath("tests/data/dataFireSense_EscapeFit.rds"),
+    functions = "base::readRDS",
     arguments = NA,
     loadTime = start
   ),
@@ -189,8 +197,7 @@ inputs <- rbind(
     data.frame(
       objectName = c("TP_Beta", "TP_Theta"),
       file = NA,
-      fun = "get",
-      package = "base",
+      functions = "base::get",
       arguments = I(args),
       loadTime = start:end
     )
