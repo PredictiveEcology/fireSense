@@ -50,7 +50,7 @@ n <- nx * ny
 r <- raster(nrows = ny, ncols = nx, xmn = -nx/2, xmx = nx/2, ymn = -ny/2, ymx = ny/2)
 
 # Create a map ignition probabilities
-ignitProb <- gaussMap(r, scale = 10, var = .0001, speedup = nx/5e2, inMemory = TRUE)
+ignitionProb <- gaussMap(r, scale = 10, var = .0001, speedup = nx/5e2, inMemory = TRUE)
 
 # Create a map of escape probabilities
 escapeProb <- gaussMap(r, scale = 50, var = .01, speedup = nx/5e2, inMemory = TRUE)
@@ -68,13 +68,13 @@ parameters <- list(
 )
 
 modules <- list("fireSense")
-objects <- c("ignitProb",
+objects <- c("ignitionProb",
              "escapeProb",
              "spreadProb",
              "random_ageMap") # Pass objects found in the global environment to the simList environment
 paths <- list(
   # cachePath = file.path(outputDir, "cache"),
-  modulePath = file.path("~/Documents/GitHub/McIntire-lab/modulesPrivate/") ## TODO: change this to tempdir()
+  modulePath = ".."
   # inputPath = inputDir,
   # outputPath = outputDir
 )
@@ -102,7 +102,7 @@ spades(mySim)
 
 # Data dependencies
 ## Input data
-- **ignitProb**: a RasterLayer or RasterStack (time series) describing spatial variations in ignition probabilities.
+- **ignitionProb**: a RasterLayer or RasterStack (time series) describing spatial variations in ignition probabilities.
 - **escapeProb**: a RasterLayer or RasterStack (time series) describing spatial variations in escape probabilities.
 - **spreadProb**: a RasterLayer or RasterStack (time series) describing spatial variations in spread probabilities.
 - **vegMap**: A RasterStack describing the spatial distribution of land-cover classes at the start of the simulation. There should be one layer per land-cover class. Each layer should describe the proportion of each cell covered by a specific land-cover class.

@@ -113,17 +113,26 @@ burn <- function(sim)
   currentTime <- time(sim, timeunit(sim))
 
   ## Mapping
-    if (!is.null(P(sim)[["mapping"]][["ignitionProb"]]))
-      sim[["ignitionProb"]] <- sim[[P(sim)[["mapping"]][["ignitionProb"]]]]
+    mod[["ignitionProb"]] <- 
+      if (!is.null(P(sim)[["mapping"]][["ignitionProb"]]))
+        sim[[P(sim)[["mapping"]][["ignitionProb"]]]]
+      else
+        sim[["ignitionProb"]]
   
-    if (!is.null(P(sim)[["mapping"]][["escapeProb"]]))
-      sim[["escapeProb"]] <- sim[[P(sim)[["mapping"]][["escapeProb"]]]]
+    mod[["escapeProb"]] <- 
+      if (!is.null(P(sim)[["mapping"]][["escapeProb"]]))
+        sim[[P(sim)[["mapping"]][["escapeProb"]]]]
+      else
+        sim[["escapeProb"]]
     
-    if (!is.null(P(sim)[["mapping"]][["spreadProb"]]))
-      sim[["spreadProb"]] <- sim[[P(sim)[["mapping"]][["spreadProb"]]]]
+    mod[["spreadProb"]] <-
+      if (!is.null(P(sim)[["mapping"]][["spreadProb"]]))
+        sim[[P(sim)[["mapping"]][["spreadProb"]]]]
+      else
+        sim[["spreadProb"]]
     
   ## Ignite
-  ignitionProb <- sim[["ignitionProb"]][]
+  ignitionProb <- mod[["ignitionProb"]][]
   isNA <- is.na(ignitionProb)
   ignitionProb <- ignitionProb[!isNA]
     
@@ -137,25 +146,25 @@ burn <- function(sim)
   rm(ignitionProb)
   
   ## Escape
-  loci <- ignited[sim[["escapeProb"]][!isNA][ignited] > runif(length(ignited))]
+  loci <- ignited[mod[["escapeProb"]][!isNA][ignited] > runif(length(ignited))]
   rm(ignited)
   
   if (length(loci) > 0L)
   {
     ## Spread
     fires <- SpaDES.tools::spread(
-      sim[["spreadProb"]],
+      mod[["spreadProb"]],
       loci = loci, 
-      spreadProb = sim[["spreadProb"]],
+      spreadProb = mod[["spreadProb"]],
       returnIndices = TRUE
     )
     
-    sim$burnMap <- raster(sim[["spreadProb"]])
+    sim$burnMap <- raster(mod[["spreadProb"]])
     sim$burnMap[fires$indices] <- 1
     
     if (is.null(sim[["burnMapCumul"]]))
     {
-      sim$burnMapCumul <- sim[["spreadProb"]]
+      sim$burnMapCumul <- mod[["spreadProb"]]
       sim$burnMapCumul[!is.na(sim$burnMapCumul[])] <- 0
     }
     
