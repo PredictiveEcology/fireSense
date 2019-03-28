@@ -79,12 +79,39 @@ defineModule(sim, list(
 
 doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE) 
 {
+  moduleName <- current(sim)$moduleName
+  
   switch(
     eventType,
-    init = { sim <- init(sim) },
-    burn = { sim <- burn(sim) },
-    save = { sim <- save(sim) },
-    plot = { sim <- plot(sim) },
+    init = {
+      sim <- init(sim) 
+      
+      sim <- scheduleEvent(sim, eventTime = P(sim)$.runInitialTime, moduleName, "burn")
+      
+      if (!is.na(P(sim)$.saveInitialTime))
+        sim <- scheduleEvent(sim, P(sim)$.saveInitialTime, moduleName, "save", .last() + 1)
+      
+      if (!is.na(P(sim)$.plotInitialTime))
+        sim <- scheduleEvent(sim, P(sim)$.saveInitialTime, moduleName, "plot", .last())
+    },
+    burn = { 
+      sim <- burn(sim) 
+      
+      if (!is.na(P(sim)$.runInterval))
+        sim <- scheduleEvent(sim, time(sim) + P(sim)$.runInterval, moduleName, "burn")
+    },
+    save = { 
+      sim <- save(sim) 
+      
+      if (!is.na(P(sim)$.saveInterval))
+        sim <- scheduleEvent(sim, time(sim) + P(sim)$.saveInterval, moduleName, "save")
+    },
+    plot = { 
+      sim <- plot(sim)
+      
+      if (!is.na(P(sim)$.plotInterval))
+        sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, moduleName, "plot")
+    },
     warning(paste("Undefined event type: '", current(sim)[1, "eventType", with = FALSE],
                   "' in module '", current(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
   )
@@ -96,15 +123,32 @@ init <- function(sim)
 {
   moduleName <- current(sim)$moduleName
   
-  sim <- scheduleEvent(sim, eventTime = P(sim)$.runInitialTime, moduleName, "burn")
+  ## Mapping
+  mod[["ignitionProb"]] <- 
+    if (!is.null(P(sim)[["mapping"]][["ignitionProb"]]))
+      sim[[P(sim)[["mapping"]][["ignitionProb"]]]]
+  else
+    sim[["ignitionProb"]]
   
-  if (!is.na(P(sim)$.saveInitialTime))
-    sim <- scheduleEvent(sim, P(sim)$.saveInitialTime, moduleName, "save", .last() + 1)
+  mod[["escapeProb"]] <- 
+    if (!is.null(P(sim)[["mapping"]][["escapeProb"]]))
+      sim[[P(sim)[["mapping"]][["escapeProb"]]]]
+  else
+    sim[["escapeProb"]]
   
-  if (!is.na(P(sim)$.plotInitialTime))
-    sim <- scheduleEvent(sim, P(sim)$.saveInitialTime, moduleName, "plot", .last())
+  mod[["spreadProb"]] <-
+    if (!is.null(P(sim)[["mapping"]][["spreadProb"]]))
+      sim[[P(sim)[["mapping"]][["spreadProb"]]]]
+  else
+    sim[["spreadProb"]]
   
-  sim
+  if (!suppliedElsewhere(object = "burnMapCumul", sim = sim))
+  {
+    sim$burnMapCumul <- mod[["spreadProb"]]
+    sim$burnMapCumul[!is.na(sim$burnMapCumul[])] <- 0
+  }
+
+  invisible(sim)
 }
 
 burn <- function(sim) 
@@ -112,25 +156,6 @@ burn <- function(sim)
   moduleName <- current(sim)$moduleName
   currentTime <- time(sim, timeunit(sim))
 
-  ## Mapping
-    mod[["ignitionProb"]] <- 
-      if (!is.null(P(sim)[["mapping"]][["ignitionProb"]]))
-        sim[[P(sim)[["mapping"]][["ignitionProb"]]]]
-      else
-        sim[["ignitionProb"]]
-  
-    mod[["escapeProb"]] <- 
-      if (!is.null(P(sim)[["mapping"]][["escapeProb"]]))
-        sim[[P(sim)[["mapping"]][["escapeProb"]]]]
-      else
-        sim[["escapeProb"]]
-    
-    mod[["spreadProb"]] <-
-      if (!is.null(P(sim)[["mapping"]][["spreadProb"]]))
-        sim[[P(sim)[["mapping"]][["spreadProb"]]]]
-      else
-        sim[["spreadProb"]]
-    
   ## Ignite
   ignitionProb <- mod[["ignitionProb"]][]
   isNA <- is.na(ignitionProb)
@@ -145,36 +170,51 @@ burn <- function(sim)
   
   rm(ignitionProb)
   
-  ## Escape
-  loci <- ignited[mod[["escapeProb"]][!isNA][ignited] > runif(length(ignited))]
-  rm(ignited)
-  
-  if (length(loci) > 0L)
+  if (length(ignited) > 0L)
   {
+    ## Escape
+    adjacent <- SpaDES.tools::adj(
+      x = mod[["escapeProb"]],
+      cells = ignited,
+      directions = 8,
+      returnDT = TRUE
+    )
+    
+    if (is.matrix(adjacent))
+      adjacent <- as.data.table(adjacent)
+    
+    n_ngb <- adjacent[, .N, by = "from"][["N"]]
+    
+    for (i in seq_along(ignited))
+    {
+      px_id <- ignited[i]
+      ngb <- adjacent[from == px_id, to]
+      mod[["escapeProb"]][ngb] <-
+        1 - (1 - mod[["escapeProb"]][ngb])^(1 / n_ngb[i])
+    }
+    
+    spreadState <- SpaDES.tools::spread(
+      landscape = mod[["escapeProb"]],
+      loci = ignited,
+      iterations = 1,
+      spreadProb = mod[["escapeProb"]],
+      returnIndices = TRUE
+    )
+    
     ## Spread
     fires <- SpaDES.tools::spread(
       mod[["spreadProb"]],
-      loci = loci, 
       spreadProb = mod[["spreadProb"]],
+      spreadState = spreadState,
       returnIndices = TRUE
     )
     
     sim$burnMap <- raster(mod[["spreadProb"]])
     sim$burnMap[fires$indices] <- 1
     
-    if (is.null(sim[["burnMapCumul"]]))
-    {
-      sim$burnMapCumul <- mod[["spreadProb"]]
-      sim$burnMapCumul[!is.na(sim$burnMapCumul[])] <- 0
-    }
-    
     sim$burnMapCumul[fires$indices] <- sim$burnMapCumul[fires$indices] + 1
-    
-    #sim$fireSize[[time(sim) - start(sim) + 1L]] <- tabulate(fires[["id"]])
   }
-  
-  if (!is.na(P(sim)$.runInterval))
-    sim <- scheduleEvent(sim, currentTime + P(sim)$.runInterval, moduleName, "burn")
+
   
   invisible(sim)
 }
@@ -184,9 +224,6 @@ save <- function(sim)
 {
   sim <- saveFiles(sim)
   
-  if (!is.na(P(sim)$.saveInterval))
-    sim <- scheduleEvent(sim, time(sim, timeunit(sim)) + P(sim)$.saveInterval, current(sim)$moduleName, "save")
-  
   invisible(sim)
 }
 
@@ -194,9 +231,6 @@ save <- function(sim)
 plot <- function(sim) 
 {
   Plot(sim$burnMap, sim$burnMapCumul, title = c("Burn map", "Cumulative burn map"))
-  
-  if (!is.na(P(sim)$.plotInterval))
-    sim <- scheduleEvent(sim, time(sim, timeunit(sim)) + P(sim)$.plotInterval, current(sim)$moduleName, "plot")
   
   invisible(sim)
 }
