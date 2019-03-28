@@ -106,7 +106,7 @@ parameters <- list(
     data = c("TP_Beta", "TP_Theta"),
     lower = c(.01, .2, .1,  .3, .001, .001, .001),
     upper = c(.20, .5, 10,  4., .300, .300, .300),
-    nCores = 1,
+    nCores = 8,
     trace = 1,
     itermax = 1
   )
@@ -160,7 +160,7 @@ inputs <- rbind(
       start:end,
       function(year)
         data.frame(
-          objectName = "tests/dataFireSense_FrequencyPredict", 
+          objectName = "dataFireSense_FrequencyPredict", 
           file = normalizePath(paste0("tests/data/dataFireSense_SizePredict_RASTER_", year, ".rds")),
           functions = "base::readRDS",
           arguments = NA,
@@ -220,7 +220,7 @@ parameters <- list(
     f = 100
   ),
   fireSense_EscapeFit = list(
-    formula = cbind(escaped, nFires) ~ MDC_07 + hw + dt + ot + wt
+    formula = cbind(escaped, nFires) ~ MDC_07 + cn + dt + ot + wt
   ),
   fireSense_EscapePredict = list(
     data = "dataFireSense_FrequencyPredict"
