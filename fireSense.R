@@ -84,8 +84,6 @@ doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE)
   switch(
     eventType,
     init = {
-      sim <- init(sim) 
-      
       sim <- scheduleEvent(sim, eventTime = P(sim)$.runInitialTime, moduleName, "burn")
       
       if (!is.na(P(sim)$.saveInitialTime))
@@ -118,11 +116,10 @@ doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE)
   invisible(sim)
 }
 
-
-init <- function(sim) 
+burn <- function(sim) 
 {
   moduleName <- current(sim)$moduleName
-  
+
   ## Mapping
   mod[["ignitionProb"]] <- 
     if (!is.null(P(sim)[["mapping"]][["ignitionProb"]]))
@@ -142,31 +139,22 @@ init <- function(sim)
   else
     sim[["spreadProb"]]
   
-  if (!suppliedElsewhere(object = "burnMapCumul", sim = sim))
+  if (is.null(sim$burnMapCumul))
   {
     sim$burnMapCumul <- mod[["spreadProb"]]
     sim$burnMapCumul[!is.na(sim$burnMapCumul[])] <- 0
   }
-
-  invisible(sim)
-}
-
-burn <- function(sim) 
-{
-  moduleName <- current(sim)$moduleName
-  currentTime <- time(sim, timeunit(sim))
-
+  
   ## Ignite
-  ignitionProb <- mod[["ignitionProb"]][]
-  isNA <- is.na(ignitionProb)
-  ignitionProb <- ignitionProb[!isNA]
-    
-  ignited <- which(
+  notNA <- which(!is.na(mod[["ignitionProb"]][]))
+  ignitionProb <- mod[["ignitionProb"]][notNA]
+
+  ignited <- notNA[which(
     rbinom(n = length(ignitionProb),
            size = 1,
            prob = pmin(ignitionProb, 1)
     ) > 0
-  )
+  )]
   
   rm(ignitionProb)
   
@@ -183,21 +171,28 @@ burn <- function(sim)
     if (is.matrix(adjacent))
       adjacent <- as.data.table(adjacent)
     
-    n_ngb <- adjacent[, .N, by = "from"][["N"]]
+    from <- unique(adjacent, by = "from")
+    from[, `:=` (probEscape = mod[["escapeProb"]][from], to = NULL)]
     
-    for (i in seq_along(ignited))
-    {
-      px_id <- ignited[i]
-      ngb <- adjacent[from == px_id, to]
-      mod[["escapeProb"]][ngb] <-
-        1 - (1 - mod[["escapeProb"]][ngb])^(1 / n_ngb[i])
-    }
+    # Update probEscape to get p0
+    p0 <- with(
+      from[adjacent, on = "from"][!is.na(probEscape)][
+        , 
+        probEscape := (1 - (1 - probEscape)^(1 / .N)),
+        by = "from"
+      ],
+      {
+        p0 <- mod[["escapeProb"]]
+        p0[to] <- probEscape
+        p0
+      }
+    )
     
     spreadState <- SpaDES.tools::spread(
       landscape = mod[["escapeProb"]],
       loci = ignited,
       iterations = 1,
-      spreadProb = mod[["escapeProb"]],
+      spreadProb = p0,
       returnIndices = TRUE
     )
     
