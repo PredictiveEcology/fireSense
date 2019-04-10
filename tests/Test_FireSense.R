@@ -213,11 +213,11 @@ parameters <- list(
     family = MASS::negative.binomial(theta = 1, link = "identity"),
     ub = list(coef = c(1, 1, 1, 1)),
     trace = 100,
-    itermax = 100,
+    itermax = 500,
     nTrials = 100
   ),
   fireSense_FrequencyPredict = list(
-    f = 100
+    f = 1
   ),
   fireSense_EscapeFit = list(
     formula = cbind(escaped, nFires) ~ MDC_07 + cn + dt + ot + wt
