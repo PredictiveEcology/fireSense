@@ -68,10 +68,14 @@ parameters <- list(
 )
 
 modules <- list("fireSense")
-objects <- c("ignitionProb",
-             "escapeProb",
-             "spreadProb",
-             "random_ageMap") # Pass objects found in the global environment to the simList environment
+
+# Pass objects found in the global environment to the simList environment
+objects <- list(
+  ignitionProb = ignitionProb,
+  escapeProb = escapeProb,
+  spreadProb = spreadProb
+)
+
 paths <- list(
   # cachePath = file.path(outputDir, "cache"),
   modulePath = ".."
@@ -105,7 +109,6 @@ spades(mySim)
 - **ignitionProb**: a RasterLayer or RasterStack (time series) describing spatial variations in ignition probabilities.
 - **escapeProb**: a RasterLayer or RasterStack (time series) describing spatial variations in escape probabilities.
 - **spreadProb**: a RasterLayer or RasterStack (time series) describing spatial variations in spread probabilities.
-- **vegMap**: A RasterStack describing the spatial distribution of land-cover classes at the start of the simulation. There should be one layer per land-cover class. Each layer should describe the proportion of each cell covered by a specific land-cover class.
 
 ## Output data
 see [Saving](#saving).
