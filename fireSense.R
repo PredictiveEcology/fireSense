@@ -93,7 +93,7 @@ doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE)
         sim <- scheduleEvent(sim, P(sim)$.saveInitialTime, moduleName, "plot", .last())
     },
     burn = { 
-      sim <- burn(sim) 
+      sim <- burn(sim)
       
       if (!is.na(P(sim)$.runInterval))
         sim <- scheduleEvent(sim, time(sim) + P(sim)$.runInterval, moduleName, "burn")
@@ -180,7 +180,7 @@ burn <- function(sim)
         , 
         probEscape := (1 - (1 - probEscape)^(1 / .N)),
         by = "from"
-      ],
+        ],
       {
         p0 <- mod[["escapeProb"]]
         p0[to] <- probEscape
@@ -188,28 +188,32 @@ burn <- function(sim)
       }
     )
     
-    spreadState <- SpaDES.tools::spread(
+    spreadState <- SpaDES.tools::spread2(
       landscape = mod[["escapeProb"]],
-      loci = ignited,
+      start = ignited,
       iterations = 1,
       spreadProb = p0,
-      returnIndices = TRUE
+      directions = 8L, 
+      asRaster = FALSE
     )
     
     ## Spread
-    fires <- SpaDES.tools::spread(
-      mod[["spreadProb"]],
+    # Note: if none of the cells are active SpaDES.tools::spread2() returns spreadState unchanged
+    fires <- SpaDES.tools::spread2(
+      landscape = mod[["spreadProb"]],
       spreadProb = mod[["spreadProb"]],
-      spreadState = spreadState,
-      returnIndices = TRUE
+      directions = 8L,
+      start = spreadState,
+      asRaster = FALSE
     )
     
-    sim$burnMap <- raster(mod[["spreadProb"]])
-    sim$burnMap[fires$indices] <- 1
+    fires[ , fire_id := .GRP, by = "initialPixels"] # Add an fire_id column
     
-    sim$burnMapCumul[fires$indices] <- sim$burnMapCumul[fires$indices] + 1
+    sim$burnMap <- raster(mod[["spreadProb"]])
+    sim$burnMap[fires$pixels] <- fires$fire_id
+    
+    sim$burnMapCumul[fires$pixels] <- sim$burnMapCumul[fires$pixels] + 1
   }
-
   
   invisible(sim)
 }
