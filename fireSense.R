@@ -38,21 +38,21 @@ defineModule(sim, list(
   ),
   inputObjects = rbind(
     expectsInput(
-      objectName = "ignitionProb",
+      objectName = "ignitionProbRaster",
       objectClass = "RasterLayer",
       sourceURL = NA_character_,
       desc = "A RasterLayer or RasterStack (time series) describing spatial
               variations in ignition probabilities."
     ),
     expectsInput(
-      objectName = "escapeProb",
+      objectName = "escapeProbRaster",
       objectClass = "RasterLayer",
       sourceURL = NA_character_,
       desc = "A RasterLayer or RasterStack (time series) describing spatial
               variations in escape probabilities."
     ),
     expectsInput(
-      objectName = "spreadProb",
+      objectName = "spreadProbRaster",
       objectClass = "RasterLayer",
       sourceURL = NA_character_,
       desc = "A RasterLayer or RasterStack describing spatial variations in the
@@ -121,48 +121,48 @@ burn <- function(sim)
   moduleName <- current(sim)$moduleName
 
   ## Mapping
-  mod[["ignitionProb"]] <- 
-    if (!is.null(P(sim)[["mapping"]][["ignitionProb"]]))
-      sim[[P(sim)[["mapping"]][["ignitionProb"]]]]
+  mod[["ignitionProbRaster"]] <- 
+    if (!is.null(P(sim)[["mapping"]][["ignitionProbRaster"]]))
+      sim[[P(sim)[["mapping"]][["ignitionProbRaster"]]]]
   else
-    sim[["ignitionProb"]]
+    sim[["ignitionProbRaster"]]
   
-  mod[["escapeProb"]] <- 
-    if (!is.null(P(sim)[["mapping"]][["escapeProb"]]))
-      sim[[P(sim)[["mapping"]][["escapeProb"]]]]
+  mod[["escapeProbRaster"]] <- 
+    if (!is.null(P(sim)[["mapping"]][["escapeProbRaster"]]))
+      sim[[P(sim)[["mapping"]][["escapeProbRaster"]]]]
   else
-    sim[["escapeProb"]]
+    sim[["escapeProbRaster"]]
   
-  mod[["spreadProb"]] <-
-    if (!is.null(P(sim)[["mapping"]][["spreadProb"]]))
-      sim[[P(sim)[["mapping"]][["spreadProb"]]]]
+  mod[["spreadProbRaster"]] <-
+    if (!is.null(P(sim)[["mapping"]][["spreadProbRaster"]]))
+      sim[[P(sim)[["mapping"]][["spreadProbRaster"]]]]
   else
-    sim[["spreadProb"]]
+    sim[["spreadProbRaster"]]
   
   if (is.null(sim$burnMapCumul))
   {
-    sim$burnMapCumul <- mod[["spreadProb"]]
+    sim$burnMapCumul <- mod[["spreadProbRaster"]]
     sim$burnMapCumul[!is.na(sim$burnMapCumul[])] <- 0
   }
   
   ## Ignite
-  notNA <- which(!is.na(mod[["ignitionProb"]][]))
-  ignitionProb <- mod[["ignitionProb"]][notNA]
+  notNA <- which(!is.na(mod[["ignitionProbRaster"]][]))
+  ignitionProbs <- mod[["ignitionProbRaster"]][notNA]
 
   ignited <- notNA[which(
-    rbinom(n = length(ignitionProb),
+    rbinom(n = length(ignitionProbs),
            size = 1,
-           prob = pmin(ignitionProb, 1)
+           prob = pmin(ignitionProbs, 1)
     ) > 0
   )]
   
-  rm(ignitionProb)
+  rm(ignitionProbs)
   
   if (length(ignited) > 0L)
   {
     ## Escape
     adjacent <- SpaDES.tools::adj(
-      x = mod[["escapeProb"]],
+      x = mod[["escapeProbRaster"]],
       cells = ignited,
       directions = 8,
       returnDT = TRUE
@@ -172,7 +172,7 @@ burn <- function(sim)
       adjacent <- as.data.table(adjacent)
     
     from <- unique(adjacent, by = "from")
-    from[, `:=` (probEscape = mod[["escapeProb"]][from], to = NULL)]
+    from[, `:=` (probEscape = mod[["escapeProbRaster"]][from], to = NULL)]
     
     # Update probEscape to get p0
     p0 <- with(
@@ -182,14 +182,14 @@ burn <- function(sim)
         by = "from"
         ],
       {
-        p0 <- mod[["escapeProb"]]
+        p0 <- mod[["escapeProbRaster"]]
         p0[to] <- probEscape
         p0
       }
     )
     
     spreadState <- SpaDES.tools::spread2(
-      landscape = mod[["escapeProb"]],
+      landscape = mod[["escapeProbRaster"]],
       start = ignited,
       iterations = 1,
       spreadProb = p0,
@@ -199,20 +199,20 @@ burn <- function(sim)
     
     ## Spread
     # Note: if none of the cells are active SpaDES.tools::spread2() returns spreadState unchanged
-    fires <- SpaDES.tools::spread2(
-      landscape = mod[["spreadProb"]],
-      spreadProb = mod[["spreadProb"]],
+    spreadState <- SpaDES.tools::spread2(
+      landscape = mod[["spreadProbRaster"]],
+      spreadProb = mod[["spreadProbRaster"]],
       directions = 8L,
       start = spreadState,
       asRaster = FALSE
     )
     
-    fires[ , fire_id := .GRP, by = "initialPixels"] # Add an fire_id column
+    spreadState[ , fire_id := .GRP, by = "initialPixels"] # Add an fire_id column
     
-    sim$burnMap <- raster(mod[["spreadProb"]])
-    sim$burnMap[fires$pixels] <- fires$fire_id
+    sim$burnMap <- raster(mod[["spreadProbRaster"]])
+    sim$burnMap[spreadState$pixels] <- spreadState$fire_id
     
-    sim$burnMapCumul[fires$pixels] <- sim$burnMapCumul[fires$pixels] + 1
+    sim$burnMapCumul[spreadState$pixels] <- sim$burnMapCumul[spreadState$pixels] + 1
   }
   
   invisible(sim)
