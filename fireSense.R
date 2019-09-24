@@ -156,6 +156,8 @@ burn <- function(sim)
     ) > 0
   )]
   
+  ignited <- sample(ignited) # Randomize order
+  
   rm(ignitionProbs)
   
   if (length(ignited) > 0L)
