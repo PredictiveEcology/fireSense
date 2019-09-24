@@ -27,7 +27,7 @@ Name|Default|Description
 ----|:-------|---------------------------------------------------------------------
 `mapping`|`NULL`|optional named vector or list of character strings mapping one or more inputs required by the module to objects loaded in the simList environment.
 `.runInitialTime`|`start(simList)`|when to start this module? By default, the start time of the simulation.
-`.runInterval`|`NA`|optional. Interval between two runs of this module, expressed in units of simulation time.
+`.runInterval`|`1`|optional. Interval between two runs of this module, expressed in units of simulation time. By default, 1 year.
 `.saveInitialTime`|`NA`|optional. When to start saving output to a file.
 `.saveInterval`|`NA`|optional. Interval between save events.
 `.plotInitialTime`|`NA`|optional. When to start plotting.
@@ -50,30 +50,24 @@ n <- nx * ny
 r <- raster(nrows = ny, ncols = nx, xmn = -nx/2, xmx = nx/2, ymn = -ny/2, ymx = ny/2)
 
 # Create a map ignition probabilities
-ignitionProb <- gaussMap(r, scale = 10, var = .0001, speedup = nx/5e2, inMemory = TRUE)
+ignitionProbRaster <- gaussMap(r, scale = 10, var = .0001, speedup = nx/5e2, inMemory = TRUE)
 
 # Create a map of escape probabilities
-escapeProb <- gaussMap(r, scale = 50, var = .01, speedup = nx/5e2, inMemory = TRUE)
+escapeProbRaster <- gaussMap(r, scale = 50, var = .01, speedup = nx/5e2, inMemory = TRUE)
 
 # Create a map of spread probabilities
-spreadProbabilities <- gaussMap(r, scale = 300, var = .05, speedup = nx/5e2, inMemory = TRUE)
+spreadProbRaster <- gaussMap(r, scale = 300, var = .05, speedup = nx/5e2, inMemory = TRUE)
 
 #outputDir <- file.path(tempdir(), "outputs")
 times <- list(start = 1, end = 100, timeunit = "year")
-parameters <- list(
-  fireSense = list(mapping = list(spreadProb = "spreadProbabilities") # One can use mapping to map data objects in the
-                                                                      # simList environment to data required by the module.
-                                                                      # Here random_ageMap is mapped to ageMap.  
-  )
-)
 
 modules <- list("fireSense")
 
 # Pass objects found in the global environment to the simList environment
 objects <- list(
-  ignitionProb = ignitionProb,
-  escapeProb = escapeProb,
-  spreadProb = spreadProb
+  ignitionProbRaster = ignitionProbRaster,
+  escapeProbRaster = escapeProbRaster,
+  spreadProbRaster = spreadProbRaster
 )
 
 paths <- list(
@@ -106,9 +100,9 @@ spades(mySim)
 
 # Data dependencies
 ## Input data
-- **ignitionProb**: a RasterLayer or RasterStack (time series) describing spatial variations in ignition probabilities.
-- **escapeProb**: a RasterLayer or RasterStack (time series) describing spatial variations in escape probabilities.
-- **spreadProb**: a RasterLayer or RasterStack (time series) describing spatial variations in spread probabilities.
+- **ignitionProbRaster**: a RasterLayer or RasterStack (time series) describing spatial variations in ignition probabilities.
+- **escapeProbRaster**: a RasterLayer or RasterStack (time series) describing spatial variations in escape probabilities.
+- **spreadProbRaster**: a RasterLayer or RasterStack (time series) describing spatial variations in spread probabilities.
 
 ## Output data
 see [Saving](#saving).
