@@ -70,11 +70,6 @@ defineModule(sim, list(
       objectClass = "RasterLayer",
       desc = "A RasterLayer describing how many times each pixel burned over the
               course of the simulation."
-    ),
-    createsOutput(
-      objectName = "spreadState",
-      objectClass = "numeric",
-      desc = "data.table describing the current state of burning pixels."
     )
   )
 ))
@@ -208,7 +203,7 @@ burn <- function(sim)
       }
     )
     
-    sim$spreadState <- SpaDES.tools::spread2(
+    mod$spreadState <- SpaDES.tools::spread2(
       landscape = mod[["escapeProbRaster"]],
       start = ignited,
       iterations = 1,
@@ -219,7 +214,7 @@ burn <- function(sim)
     
     ## Spread
     # Note: if none of the cells are active SpaDES.tools::spread2() returns spreadState unchanged
-    sim$spreadState <- SpaDES.tools::spread2(
+    mod$spreadState <- SpaDES.tools::spread2(
       landscape = mod[["spreadProbRaster"]],
       spreadProb = mod[["spreadProbRaster"]],
       directions = 8L,
@@ -227,7 +222,7 @@ burn <- function(sim)
       asRaster = FALSE
     )
     
-    sim$spreadState[ , fire_id := .GRP, by = "initialPixels"] # Add an fire_id column
+    mod$spreadState[ , fire_id := .GRP, by = "initialPixels"] # Add an fire_id column
     
     sim$burnMap <- raster(mod[["spreadProbRaster"]])
     sim$burnMap[spreadState$pixels] <- spreadState$fire_id
