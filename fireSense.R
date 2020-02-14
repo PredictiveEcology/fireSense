@@ -70,6 +70,11 @@ defineModule(sim, list(
       objectClass = "RasterLayer",
       desc = "A RasterLayer describing how many times each pixel burned over the
               course of the simulation."
+    ),
+    createsOutput(
+      objectName = "spreadState",
+      objectClass = "numeric",
+      desc = "data.table describing the current state of burning pixels."
     )
   )
 ))
@@ -86,9 +91,6 @@ doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE)
     init = {
       sim <- scheduleEvent(sim, eventTime = P(sim)$.runInitialTime, moduleName, "burn")
       
-      if (!is.na(P(sim)$.saveInitialTime))
-        sim <- scheduleEvent(sim, P(sim)$.saveInitialTime, moduleName, "save", .last() + 1)
-      
       if (!is.na(P(sim)$.plotInitialTime))
         sim <- scheduleEvent(sim, P(sim)$.saveInitialTime, moduleName, "plot", .last())
     },
@@ -97,12 +99,6 @@ doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE)
       
       if (!is.na(P(sim)$.runInterval))
         sim <- scheduleEvent(sim, time(sim) + P(sim)$.runInterval, moduleName, "burn")
-    },
-    save = { 
-      sim <- save(sim) 
-      
-      if (!is.na(P(sim)$.saveInterval))
-        sim <- scheduleEvent(sim, time(sim) + P(sim)$.saveInterval, moduleName, "save")
     },
     plot = { 
       sim <- plot(sim)
@@ -125,13 +121,35 @@ burn <- function(sim)
     if (!is.null(P(sim)[["mapping"]][["ignitionProbRaster"]]))
       sim[[P(sim)[["mapping"]][["ignitionProbRaster"]]]]
   else
-    sim[["ignitionProbRaster"]]
+   if (!is.null(sim[["ignitionProbRaster"]])){
+        sim[["ignitionProbRaster"]]
+      } else {
+        if (!is.null(sim[["fireSense_FrequencyPredicted"]])){
+          sim[["fireSense_FrequencyPredicted"]]
+        } else {
+          if (!is.null(sim[["fireSense_IgnitionPredicted"]])){
+            sim[["fireSense_IgnitionPredicted"]]
+          } else {
+            stop("Neither `fireSense_FrequencyPredicted` (i.e. being deprecated), `fireSense_IgnitionPredicted` nor 
+                 `ignitionProbRaster` were found. Please provide one of these")
+          }
+        }        
+      }
   
   mod[["escapeProbRaster"]] <- 
     if (!is.null(P(sim)[["mapping"]][["escapeProbRaster"]]))
       sim[[P(sim)[["mapping"]][["escapeProbRaster"]]]]
   else
-    sim[["escapeProbRaster"]]
+    else
+      if (!is.null(sim[["escapeProbRaster"]])){
+        sim[["escapeProbRaster"]]
+      } else {
+        if (!is.null(sim[["fireSense_EscapePredicted"]])){
+          sim[["fireSense_EscapePredicted"]]
+        } else {
+          stop("Neither `fireSense_EscapePredicted` nor `escapeProb` were found. Please provide one of these")
+        }        
+      }
   
   mod[["spreadProbRaster"]] <-
     if (!is.null(P(sim)[["mapping"]][["spreadProbRaster"]]))
@@ -190,7 +208,7 @@ burn <- function(sim)
       }
     )
     
-    spreadState <- SpaDES.tools::spread2(
+    sim$spreadState <- SpaDES.tools::spread2(
       landscape = mod[["escapeProbRaster"]],
       start = ignited,
       iterations = 1,
@@ -201,7 +219,7 @@ burn <- function(sim)
     
     ## Spread
     # Note: if none of the cells are active SpaDES.tools::spread2() returns spreadState unchanged
-    spreadState <- SpaDES.tools::spread2(
+    sim$spreadState <- SpaDES.tools::spread2(
       landscape = mod[["spreadProbRaster"]],
       spreadProb = mod[["spreadProbRaster"]],
       directions = 8L,
@@ -209,7 +227,7 @@ burn <- function(sim)
       asRaster = FALSE
     )
     
-    spreadState[ , fire_id := .GRP, by = "initialPixels"] # Add an fire_id column
+    sim$spreadState[ , fire_id := .GRP, by = "initialPixels"] # Add an fire_id column
     
     sim$burnMap <- raster(mod[["spreadProbRaster"]])
     sim$burnMap[spreadState$pixels] <- spreadState$fire_id
@@ -219,15 +237,6 @@ burn <- function(sim)
   
   invisible(sim)
 }
-
-
-save <- function(sim) 
-{
-  sim <- saveFiles(sim)
-  
-  invisible(sim)
-}
-
 
 plot <- function(sim) 
 {
