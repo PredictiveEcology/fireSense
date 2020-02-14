@@ -134,8 +134,7 @@ burn <- function(sim)
   mod[["escapeProbRaster"]] <- 
     if (!is.null(P(sim)[["mapping"]][["escapeProbRaster"]]))
       sim[[P(sim)[["mapping"]][["escapeProbRaster"]]]]
-  else
-    else
+   else
       if (!is.null(sim[["escapeProbRaster"]])){
         sim[["escapeProbRaster"]]
       } else {
