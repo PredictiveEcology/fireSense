@@ -66,10 +66,25 @@ defineModule(sim, list(
       desc = "A RasterLayer describing how which pixels burned this timestep."
     ),
     createsOutput(
+      objectName = "rstCurrentBurnList",
+      objectClass = "list",
+      desc = "List of all rstCurrentBurn for each year -- similar to SCFM"
+    ),
+    createsOutput(
       objectName = "burnMap",
       objectClass = "RasterLayer",
       desc = "A RasterLayer describing how many times each pixel burned over the
               course of the simulation."
+    ),
+    createsOutput(
+      objectName = "burnDT",
+      objectClass = "data.table",
+      desc = "Data table with pixel IDs of most recent burn."
+    ),
+    createsOutput(
+      objectName = "burnSummary",
+      objectClass = "data.table",
+      desc = "Describes details of all burned pixels."
     )
   )
 ))
@@ -84,6 +99,9 @@ doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE)
   switch(
     eventType,
     init = {
+      
+      sim$rstCurrentBurnList <- list()
+      
       sim <- scheduleEvent(sim, eventTime = P(sim)$.runInitialTime, moduleName, "burn")
       
       if (!is.na(P(sim)$.plotInitialTime))
@@ -232,9 +250,20 @@ burn <- function(sim)
     
     sim$rstCurrentBurn <- raster(mod[["spreadProbRaster"]])
     sim$rstCurrentBurn[mod$spreadState$pixels] <- mod$spreadState$fire_id
-    sim$rstCurrentBurn <- sim$rstCurrentBurn
-    
+    sim$rstCurrentBurnList[[paste0("Year", time(sim))]] <- sim$rstCurrentBurn
     sim$burnMap[mod$spreadState$pixels] <- sim$burnMap[mod$spreadState$pixels] + 1
+    
+    #get fire year, pixels burned, area burned, poly ID of all burned pixels
+    # Make burnSummary --> similar to SCFM
+    sim$burnDT <- sim$mod$spreadState 
+    
+    tempDT <- sim$burnDT[, .(.N), by = "initialPixels"]
+    tempDT$year <- time(sim)
+    tempDT$areaBurned <- tempDT$N * sim$landscapeAttr[[1]]$cellSize
+    tempDT$polyID <- sim$fireRegimeRas[tempDT$initialPixels]
+    setnames(tempDT, c("initialPixels"), c("igLoc"))
+    sim$burnSummary <- rbind(sim$burnSummary, tempDT)
+    
   }
   
   invisible(sim)
