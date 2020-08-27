@@ -255,12 +255,15 @@ burn <- function(sim)
     
     #get fire year, pixels burned, area burned, poly ID of all burned pixels
     # Make burnSummary --> similar to SCFM
-    sim$burnDT <- sim$mod$spreadState 
-    
+    sim$burnDT <- mod$spreadState
+  
     tempDT <- sim$burnDT[, .(.N), by = "initialPixels"]
     tempDT$year <- time(sim)
-    tempDT$areaBurned <- tempDT$N * sim$landscapeAttr[[1]]$cellSize
+    tempDT$areaBurned <- tempDT$N * prod(res(mod[["spreadProbRaster"]]))*1e-4
     tempDT$polyID <- sim$fireRegimeRas[tempDT$initialPixels]
+    tempDT$polyID <- sim$ecoregionRst[tempDT$initialPixels] # TODO Once we are parameterizing 
+    # fireSense, ecoregionRst needs to become the shapefile we are using as fire polygons. It will
+    # most likely be ecoregions, but needs to become a different object so the user can have control
     setnames(tempDT, c("initialPixels"), c("igLoc"))
     sim$burnSummary <- rbind(sim$burnSummary, tempDT)
     
