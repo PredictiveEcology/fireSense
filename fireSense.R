@@ -4,7 +4,7 @@ defineModule(sim, list(
   name = "fireSense",
   description = "A landscape fire model, sensitive to environmental changes (e.g.
                  weather and land-cover).",
-  keywords = c("fire", "percolation", "environmental control", "feedback", 
+  keywords = c("fire", "percolation", "environmental control", "feedback",
                 "weather", "vegetation", "land-cover"),
   authors = c(person("Jean", "Marchal", email = "jean.d.marchal@gmail.com", role = c("aut", "cre"))),
   childModules = character(),
@@ -18,22 +18,22 @@ defineModule(sim, list(
   parameters = rbind(
     #defineParameter("paramName", "paramClass", default, min, max, "parameter description")),
     defineParameter(name = "mapping", class = "character, list", default = NULL,
-                    desc = "optional named vector or list of character strings 
+                    desc = "optional named vector or list of character strings
                             mapping one or more inputs required by the module to
                             objects loaded in the simList environment."),
     defineParameter(name = ".runInitialTime", class = "numeric", default = start(sim),
                     desc = "when to start this module? By default, the start
                             time of the simulation."),
-    defineParameter(name = ".runInterval", class = "numeric", default = 1, 
+    defineParameter(name = ".runInterval", class = "numeric", default = 1,
                     desc = "optional. Interval between two runs of this module,
                             expressed in units of simulation time. By default, 1 year."),
-    defineParameter(name = ".saveInitialTime", class = "numeric", default = NA, 
+    defineParameter(name = ".saveInitialTime", class = "numeric", default = NA,
                     desc = "optional. When to start saving output to a file."),
-    defineParameter(name = ".saveInterval", class = "numeric", default = NA, 
+    defineParameter(name = ".saveInterval", class = "numeric", default = NA,
                     desc = "optional. Interval between save events."),
-    defineParameter(name = ".plotInitialTime", class = "numeric", default = NA, 
+    defineParameter(name = ".plotInitialTime", class = "numeric", default = NA,
                     desc = "optional. When to start plotting."),
-    defineParameter(name = ".plotInterval", class = "numeric", default = NA, 
+    defineParameter(name = ".plotInterval", class = "numeric", default = NA,
                     desc = "optional. Interval between plot events.")
   ),
   inputObjects = rbind(
@@ -73,8 +73,7 @@ defineModule(sim, list(
     createsOutput(
       objectName = "burnMap",
       objectClass = "RasterLayer",
-      desc = "A RasterLayer describing how many times each pixel burned over the
-              course of the simulation."
+      desc = "A RasterLayer describing how many times each pixel burned over the course of the simulation."
     ),
     createsOutput(
       objectName = "burnDT",
@@ -92,30 +91,30 @@ defineModule(sim, list(
 ## event types
 #   - type `init` is required for initialiazation
 
-doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE) 
+doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE)
 {
   moduleName <- current(sim)$moduleName
-  
+
   switch(
     eventType,
     init = {
-      
+
       sim$rstCurrentBurnList <- list()
-      
+
       sim <- scheduleEvent(sim, eventTime = P(sim)$.runInitialTime, moduleName, "burn")
-      
+
       if (!is.na(P(sim)$.plotInitialTime))
         sim <- scheduleEvent(sim, P(sim)$.saveInitialTime, moduleName, "plot", .last())
     },
-    burn = { 
+    burn = {
       sim <- burn(sim)
-      
+
       if (!is.na(P(sim)$.runInterval))
         sim <- scheduleEvent(sim, time(sim) + P(sim)$.runInterval, moduleName, "burn")
     },
-    plot = { 
+    plot = {
       sim <- plot(sim)
-      
+
       if (!is.na(P(sim)$.plotInterval))
         sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, moduleName, "plot")
     },
@@ -125,7 +124,7 @@ doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE)
   invisible(sim)
 }
 
-burn <- function(sim) 
+burn <- function(sim)
 {
   moduleName <- current(sim)$moduleName
   ## Mapping
@@ -141,13 +140,13 @@ burn <- function(sim)
         if (!is.null(sim[["fireSense_IgnitionPredicted"]])){
           sim[["fireSense_IgnitionPredicted"]]
         } else {
-          stop("Neither `fireSense_FrequencyPredicted` (i.e. being deprecated), `fireSense_IgnitionPredicted` nor 
+          stop("Neither `fireSense_FrequencyPredicted` (i.e. being deprecated), `fireSense_IgnitionPredicted` nor
                  `ignitionProbRaster` were found. Please provide one of these")
         }
-      }        
+      }
     }
   }
-  
+
   mod[["escapeProbRaster"]] <- if (!is.null(P(sim)[["mapping"]][["escapeProbRaster"]])){
     sim[[P(sim)[["mapping"]][["escapeProbRaster"]]]]
   } else {
@@ -158,10 +157,10 @@ burn <- function(sim)
         sim[["fireSense_EscapePredicted"]]
       } else {
         stop("Neither `fireSense_EscapePredicted` nor `escapeProb` were found. Please provide one of these")
-      }        
+      }
     }
   }
-  
+
   mod[["spreadProbRaster"]] <- if (!is.null(P(sim)[["mapping"]][["spreadProbRaster"]])) {
     sim[[P(sim)[["mapping"]][["spreadProbRaster"]]]]
   } else {
@@ -172,16 +171,16 @@ burn <- function(sim)
         sim[["fireSense_SpreadPredicted"]]
       } else {
         stop("Neither `fireSense_SpreadPredicted` nor `spreadProb` were found. Please provide one of these")
-      }        
+      }
     }
   }
-  
+
   if (is.null(sim$burnMap))
   {
     sim$burnMap <- mod[["spreadProbRaster"]]
     sim$burnMap[!is.na(sim$burnMap[])] <- 0
   }
-  
+
   ## Ignite
   notNA <- which(!is.na(mod[["ignitionProbRaster"]][]))
   ignitionProbs <- mod[["ignitionProbRaster"]][notNA]
@@ -192,11 +191,11 @@ burn <- function(sim)
            prob = pmin(ignitionProbs, 1)
     ) > 0
   )]
-  
+
   ignited <- sample(ignited) # Randomize order
-  
+
   rm(ignitionProbs)
-  
+
   if (length(ignited) > 0L)
   {
     ## Escape
@@ -206,17 +205,17 @@ burn <- function(sim)
       directions = 8,
       returnDT = TRUE
     )
-    
+
     if (is.matrix(adjacent))
       adjacent <- as.data.table(adjacent)
-    
+
     from <- unique(adjacent, by = "from")
     from[, `:=` (probEscape = mod[["escapeProbRaster"]][from], to = NULL)]
-    
+
     # Update probEscape to get p0
     p0 <- with(
       from[adjacent, on = "from"][!is.na(probEscape)][
-        , 
+        ,
         probEscape := (1 - (1 - probEscape)^(1 / .N)),
         by = "from"
         ],
@@ -226,16 +225,16 @@ burn <- function(sim)
         p0
       }
     )
-    
+
     mod$spreadState <- SpaDES.tools::spread2(
       landscape = mod[["escapeProbRaster"]],
       start = ignited,
       iterations = 1,
       spreadProb = p0,
-      directions = 8L, 
+      directions = 8L,
       asRaster = FALSE
     )
-    
+
     ## Spread
     # Note: if none of the cells are active SpaDES.tools::spread2() returns spreadState unchanged
     mod$spreadState <- SpaDES.tools::spread2(
@@ -245,14 +244,14 @@ burn <- function(sim)
       start = mod$spreadState,
       asRaster = FALSE
     )
-    
+
     mod$spreadState[ , fire_id := .GRP, by = "initialPixels"] # Add an fire_id column
-    
+
     sim$rstCurrentBurn <- raster(mod[["spreadProbRaster"]])
     sim$rstCurrentBurn[mod$spreadState$pixels] <- mod$spreadState$fire_id
     sim$rstCurrentBurnList[[paste0("Year", time(sim))]] <- sim$rstCurrentBurn
     sim$burnMap[mod$spreadState$pixels] <- sim$burnMap[mod$spreadState$pixels] + 1
-    
+
     #get fire year, pixels burned, area burned, poly ID of all burned pixels
     # Make burnSummary --> similar to SCFM
     sim$burnDT <- mod$spreadState
@@ -266,15 +265,15 @@ burn <- function(sim)
     # most likely be ecoregions, but needs to become a different object so the user can have control
     setnames(tempDT, c("initialPixels"), c("igLoc"))
     sim$burnSummary <- rbind(sim$burnSummary, tempDT)
-    
+
   }
-  
+
   invisible(sim)
 }
 
-plot <- function(sim) 
+plot <- function(sim)
 {
   Plot(sim$rstCurrentBurn, sim$burnMap, title = c("Burn map", "Cumulative burn map"))
-  
+
   invisible(sim)
 }
