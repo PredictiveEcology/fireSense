@@ -101,7 +101,7 @@ doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE)
 
       sim$rstCurrentBurnList <- list()
 
-      sim <- scheduleEvent(sim, eventTime = P(sim)$.runInitialTime, moduleName, "burn")
+      sim <- scheduleEvent(sim, eventTime = P(sim)$.runInitialTime, moduleName, "burn", eventPriority = 5.13)
 
       if (!is.na(P(sim)$.plotInitialTime))
         sim <- scheduleEvent(sim, P(sim)$.saveInitialTime, moduleName, "plot", .last())
