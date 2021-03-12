@@ -5,7 +5,7 @@ defineModule(sim, list(
   description = "A landscape fire model, sensitive to environmental changes (e.g.
                  weather and land-cover).",
   keywords = c("fire", "percolation", "environmental control", "feedback",
-                "weather", "vegetation", "land-cover"),
+               "weather", "vegetation", "land-cover"),
   authors = c(person("Jean", "Marchal", email = "jean.d.marchal@gmail.com", role = c("aut", "cre"))),
   childModules = character(),
   version = numeric_version("0.1.0"),
@@ -17,13 +17,11 @@ defineModule(sim, list(
   reqdPkgs = list("data.table", "raster"),
   parameters = rbind(
     #defineParameter("paramName", "paramClass", default, min, max, "parameter description")),
-    defineParameter(name = "mapping", class = "character, list", default = NULL,
-                    desc = "optional named vector or list of character strings
-                            mapping one or more inputs required by the module to
-                            objects loaded in the simList environment."),
     defineParameter(name = ".runInitialTime", class = "numeric", default = start(sim),
-                    desc = "when to start this module? By default, the start
-                            time of the simulation."),
+                    desc ="time to simulate initial fire"),
+    defineParameter(name = "whichModulesToPrepare", class = "character",
+                    default = c("fireSense_SpreadPredict", "fireSense_IgnitionPredict", "fireSense_EscapePredict"),
+                    NA, NA, desc = "Which fireSense fit modules to prep? defaults to all 3. Must include ignition"),
     defineParameter(name = ".runInterval", class = "numeric", default = 1,
                     desc = "optional. Interval between two runs of this module,
                             expressed in units of simulation time. By default, 1 year."),
@@ -37,62 +35,30 @@ defineModule(sim, list(
                     desc = "optional. Interval between plot events.")
   ),
   inputObjects = rbind(
-    expectsInput(
-      objectName = "ignitionProbRaster",
-      objectClass = "RasterLayer",
-      sourceURL = NA_character_,
-      desc = "A RasterLayer or RasterStack (time series) describing spatial
-              variations in ignition probabilities."
-    ),
-    expectsInput(
-      objectName = "escapeProbRaster",
-      objectClass = "RasterLayer",
-      sourceURL = NA_character_,
-      desc = "A RasterLayer or RasterStack (time series) describing spatial
-              variations in escape probabilities."
-    ),
-    expectsInput(
-      objectName = "spreadProbRaster",
-      objectClass = "RasterLayer",
-      sourceURL = NA_character_,
-      desc = "A RasterLayer or RasterStack describing spatial variations in the
-              spread probabilities."
-    )
+    expectsInput(objectName = "fireSense_IgnitionPredicted", objectClass = "data.frame",
+                 desc = "A RasterLayer of ignition probabilities."),
+    expectsInput(objectName = "fireSense_EscapePredicted", objectClass = "RasterLayer",
+                 desc = "A RasterLayer of escape probabilities."),
+    expectsInput(objectName = "fireSense_SpreadPredicted", objectClass = "RasterLayer",
+                 desc = "A RasterLayer of spread probabilities.")
   ),
   outputObjects = rbind(
-    createsOutput(
-      objectName = "rstCurrentBurn",
-      objectClass = "RasterLayer",
-      desc = "A RasterLayer describing how which pixels burned this timestep."
-    ),
-    createsOutput(
-      objectName = "rstCurrentBurnList",
-      objectClass = "list",
-      desc = "List of all rstCurrentBurn for each year -- similar to SCFM"
-    ),
-    createsOutput(
-      objectName = "burnMap",
-      objectClass = "RasterLayer",
-      desc = "A RasterLayer describing how many times each pixel burned over the course of the simulation."
-    ),
-    createsOutput(
-      objectName = "burnDT",
-      objectClass = "data.table",
-      desc = "Data table with pixel IDs of most recent burn."
-    ),
-    createsOutput(
-      objectName = "burnSummary",
-      objectClass = "data.table",
-      desc = "Describes details of all burned pixels."
-    )
+    createsOutput(objectName = "rstCurrentBurn", objectClass = "RasterLayer",
+                  desc = "A RasterLayer describing how which pixels burned this timestep."),
+    createsOutput(objectName = "rstCurrentBurnList", objectClass = "list",
+                  desc = "List of all rstCurrentBurn for each year -- similar to SCFM"),
+    createsOutput(objectName = "burnMap", objectClass = "RasterLayer",
+                  desc = "A RasterLayer describing how many times each pixel burned over the course of the simulation."),
+    createsOutput(objectName = "burnDT", objectClass = "data.table",
+                  desc = "Data table with pixel IDs of most recent burn."),
+    createsOutput(objectName = "burnSummary", objectClass = "data.table", desc = "Describes details of all burned pixels.")
   )
 ))
 
 ## event types
 #   - type `init` is required for initialiazation
 
-doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE)
-{
+doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE) {
   moduleName <- current(sim)$moduleName
 
   switch(
@@ -124,66 +90,13 @@ doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE)
   invisible(sim)
 }
 
-burn <- function(sim)
-{
+burn <- function(sim) {
+
   moduleName <- current(sim)$moduleName
-  ## Mapping
-  mod[["ignitionProbRaster"]] <- if (!is.null(P(sim)[["mapping"]][["ignitionProbRaster"]])){
-    sim[[P(sim)[["mapping"]][["ignitionProbRaster"]]]]
-  } else {
-    if (!is.null(sim[["ignitionProbRaster"]])){
-      sim[["ignitionProbRaster"]]
-    } else {
-      if (!is.null(sim[["fireSense_FrequencyPredicted"]])){
-        sim[["fireSense_FrequencyPredicted"]]
-      } else {
-        if (!is.null(sim[["fireSense_IgnitionPredicted"]])){
-          sim[["fireSense_IgnitionPredicted"]]
-        } else {
-          stop("Neither `fireSense_FrequencyPredicted` (i.e. being deprecated), `fireSense_IgnitionPredicted` nor
-                 `ignitionProbRaster` were found. Please provide one of these")
-        }
-      }
-    }
-  }
-
-  mod[["escapeProbRaster"]] <- if (!is.null(P(sim)[["mapping"]][["escapeProbRaster"]])){
-    sim[[P(sim)[["mapping"]][["escapeProbRaster"]]]]
-  } else {
-    if (!is.null(sim[["escapeProbRaster"]])){
-      sim[["escapeProbRaster"]]
-    } else {
-      if (!is.null(sim[["fireSense_EscapePredicted"]])){
-        sim[["fireSense_EscapePredicted"]]
-      } else {
-        stop("Neither `fireSense_EscapePredicted` nor `escapeProb` were found. Please provide one of these")
-      }
-    }
-  }
-
-  mod[["spreadProbRaster"]] <- if (!is.null(P(sim)[["mapping"]][["spreadProbRaster"]])) {
-    sim[[P(sim)[["mapping"]][["spreadProbRaster"]]]]
-  } else {
-    if (!is.null(sim[["spreadProbRaster"]])){
-      sim[["spreadProbRaster"]]
-    } else {
-      if (!is.null(sim[["fireSense_SpreadPredicted"]])){
-        sim[["fireSense_SpreadPredicted"]]
-      } else {
-        stop("Neither `fireSense_SpreadPredicted` nor `spreadProb` were found. Please provide one of these")
-      }
-    }
-  }
-
-  if (is.null(sim$burnMap))
-  {
-    sim$burnMap <- mod[["spreadProbRaster"]]
-    sim$burnMap[!is.na(sim$burnMap[])] <- 0
-  }
 
   ## Ignite
-  notNA <- which(!is.na(mod[["ignitionProbRaster"]][]))
-  ignitionProbs <- mod[["ignitionProbRaster"]][notNA]
+  notNA <- which(!is.na(sim$fireSense_IgnitionPredicted[]))
+  ignitionProbs <- sim$fireSense_IgnitionPredicted[notNA]
 
   ignited <- notNA[which(
     rbinom(n = length(ignitionProbs),
@@ -196,83 +109,82 @@ burn <- function(sim)
 
   rm(ignitionProbs)
 
-  if (length(ignited) > 0L)
-  {
-    ## Escape
-    adjacent <- SpaDES.tools::adj(
-      x = mod[["escapeProbRaster"]],
-      cells = ignited,
-      directions = 8,
-      returnDT = TRUE
-    )
+  if (length(ignited) > 0L) {
+    if ("fireSense_EscapePredict" %in% P(sim)$whichModulesToPrepare) {
+      ## Escape
+      adjacent <- SpaDES.tools::adj(
+        x = sim$fireSense_EscapePredicted,
+        cells = ignited,
+        directions = 8,
+        returnDT = TRUE
+      )
 
-    if (is.matrix(adjacent))
-      adjacent <- as.data.table(adjacent)
+      if (is.matrix(adjacent))
+        adjacent <- as.data.table(adjacent)
 
-    from <- unique(adjacent, by = "from")
-    from[, `:=` (probEscape = mod[["escapeProbRaster"]][from], to = NULL)]
+      from <- unique(adjacent, by = "from")
+      from[, `:=` (probEscape = sim$fireSense_EscapePredicted[from], to = NULL)]
 
-    # Update probEscape to get p0
-    p0 <- with(
-      from[adjacent, on = "from"][!is.na(probEscape)][
-        ,
-        probEscape := (1 - (1 - probEscape)^(1 / .N)),
-        by = "from"
+      # Update probEscape to get p0
+      p0 <- with(
+        from[adjacent, on = "from"][!is.na(probEscape)][
+          ,
+          probEscape := (1 - (1 - probEscape)^(1 / .N)),
+          by = "from"
         ],
-      {
-        p0 <- mod[["escapeProbRaster"]]
-        p0[to] <- probEscape
-        p0
-      }
-    )
+        {
+          p0 <- sim$fireSense_EscapePredicted
+          p0[to] <- probEscape
+          p0
+        }
+      )
 
-    mod$spreadState <- SpaDES.tools::spread2(
-      landscape = mod[["escapeProbRaster"]],
-      start = ignited,
-      iterations = 1,
-      spreadProb = p0,
-      directions = 8L,
-      asRaster = FALSE
-    )
+      mod$spreadState <- SpaDES.tools::spread2(
+        landscape = sim$fireSense_EscapePredicted,
+        start = ignited,
+        iterations = 1,
+        spreadProb = p0,
+        directions = 8L,
+        asRaster = FALSE
+      )
+    }
+    if ("fireSense_SpreadPredict" %in% P(sim)$whichModulesToPrepare) {
+      ## Spread
+      # Note: if none of the cells are active SpaDES.tools::spread2() returns spreadState unchanged
+      mod$spreadState <- SpaDES.tools::spread2(
+        landscape = sim$fireSense_SpreadPredicted,
+        spreadProb = sim$fireSense_SpreadPredicted,
+        directions = 8L,
+        start = mod$spreadState,
+        asRaster = FALSE)
 
-    ## Spread
-    # Note: if none of the cells are active SpaDES.tools::spread2() returns spreadState unchanged
-    mod$spreadState <- SpaDES.tools::spread2(
-      landscape = mod[["spreadProbRaster"]],
-      spreadProb = mod[["spreadProbRaster"]],
-      directions = 8L,
-      start = mod$spreadState,
-      asRaster = FALSE
-    )
+      mod$spreadState[ , fire_id := .GRP, by = "initialPixels"] # Add an fire_id column
 
-    mod$spreadState[ , fire_id := .GRP, by = "initialPixels"] # Add an fire_id column
+      sim$rstCurrentBurn <- raster(sim$fireSense_SpreadPredicted)
+      sim$rstCurrentBurn[mod$spreadState$pixels] <- mod$spreadState$fire_id
+      sim$rstCurrentBurnList[[paste0("Year", time(sim))]] <- sim$rstCurrentBurn
+      sim$burnMap[mod$spreadState$pixels] <- sim$burnMap[mod$spreadState$pixels] + 1
 
-    sim$rstCurrentBurn <- raster(mod[["spreadProbRaster"]])
-    sim$rstCurrentBurn[mod$spreadState$pixels] <- mod$spreadState$fire_id
-    sim$rstCurrentBurnList[[paste0("Year", time(sim))]] <- sim$rstCurrentBurn
-    sim$burnMap[mod$spreadState$pixels] <- sim$burnMap[mod$spreadState$pixels] + 1
+      #get fire year, pixels burned, area burned, poly ID of all burned pixels
+      # Make burnSummary --> similar to SCFM
+      sim$burnDT <- mod$spreadState
 
-    #get fire year, pixels burned, area burned, poly ID of all burned pixels
-    # Make burnSummary --> similar to SCFM
-    sim$burnDT <- mod$spreadState
-  
-    tempDT <- sim$burnDT[, .(.N), by = "initialPixels"]
-    tempDT$year <- time(sim)
-    tempDT$areaBurned <- tempDT$N * prod(res(mod[["spreadProbRaster"]]))*1e-4
-    tempDT$polyID <- sim$fireRegimeRas[tempDT$initialPixels]
-    tempDT$polyID <- sim$ecoregionRst[tempDT$initialPixels] # TODO Once we are parameterizing 
-    # fireSense, ecoregionRst needs to become the shapefile we are using as fire polygons. It will
-    # most likely be ecoregions, but needs to become a different object so the user can have control
-    setnames(tempDT, c("initialPixels"), c("igLoc"))
-    sim$burnSummary <- rbind(sim$burnSummary, tempDT)
-
+      tempDT <- sim$burnDT[, .(.N), by = "initialPixels"]
+      tempDT$year <- time(sim)
+      tempDT$areaBurned <- tempDT$N * prod(res(sim$fireSense_SpreadPredicted))*1e-4
+      tempDT$polyID <- sim$fireRegimeRas[tempDT$initialPixels]
+      tempDT$polyID <- sim$ecoregionRst[tempDT$initialPixels] # TODO Once we are parameterizing
+      # fireSense, ecoregionRst needs to become the shapefile we are using as fire polygons. It will
+      # most likely be ecoregions, but needs to become a different object so the user can have control
+      setnames(tempDT, c("initialPixels"), c("igLoc"))
+      sim$burnSummary <- rbind(sim$burnSummary, tempDT)
+    }
   }
 
   invisible(sim)
 }
 
-plot <- function(sim)
-{
+plot <- function(sim) {
   Plot(sim$rstCurrentBurn, sim$burnMap, title = c("Burn map", "Cumulative burn map"))
 
   invisible(sim)
