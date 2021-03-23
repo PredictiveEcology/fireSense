@@ -76,7 +76,7 @@ doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE) {
       sim <- burn(sim)
 
       if (!is.na(P(sim)$.runInterval))
-        sim <- scheduleEvent(sim, time(sim) + P(sim)$.runInterval, moduleName, "burn")
+        sim <- scheduleEvent(sim, time(sim) + P(sim)$.runInterval, moduleName, "burn", eventPriority = 5.13)
     },
     plot = {
       sim <- plot(sim)
