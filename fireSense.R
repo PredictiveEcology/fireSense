@@ -46,11 +46,11 @@ defineModule(sim, list(
   ),
   outputObjects = rbind(
     createsOutput(objectName = "rstCurrentBurn", objectClass = "RasterLayer",
-                  desc = "A RasterLayer describing how which pixels burned this timestep."),
-    createsOutput(objectName = "rstCurrentBurnList", objectClass = "list",
-                  desc = "List of all rstCurrentBurn for each year -- similar to SCFM"),
+                  desc = "A binary raster with 1 values representing burned pixels."),
+    createsOutput(objectName = "rstAnnualBurnID", objectClass = "RasterLayer",
+                  desc = "annual raster whose values distinguish individual fires"),
     createsOutput(objectName = "burnMap", objectClass = "RasterLayer",
-                  desc = "A RasterLayer describing how many times each pixel burned over the course of the simulation."),
+                  desc = "A raster of cumulative burns"),
     createsOutput(objectName = "burnDT", objectClass = "data.table",
                   desc = "Data table with pixel IDs of most recent burn."),
     createsOutput(objectName = "burnSummary", objectClass = "data.table", desc = "Describes details of all burned pixels.")
@@ -169,8 +169,11 @@ burn <- function(sim) {
 
       mod$spreadState[ , fire_id := .GRP, by = "initialPixels"] # Add an fire_id column
 
+      sim$rstAnnualBurnID <- raster(sim$fireSense_SpreadPredicted)
       sim$rstCurrentBurn <- raster(sim$fireSense_SpreadPredicted)
-      sim$rstCurrentBurn[mod$spreadState$pixels] <- mod$spreadState$fire_id
+
+      sim$rstAnnualBurnID[mod$spreadState$pixels] <- mod$spreadState$fire_id
+      sim$rstCurrentBurn[mod$spreadState$pixels] <- 1
       sim$burnMap[mod$spreadState$pixels] <- sim$burnMap[mod$spreadState$pixels] + 1
 
       #get fire year, pixels burned, area burned, poly ID of all burned pixels
