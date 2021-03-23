@@ -29,6 +29,8 @@ defineModule(sim, list(
                     desc = "optional. When to start saving output to a file."),
     defineParameter(name = ".saveInterval", class = "numeric", default = NA,
                     desc = "optional. Interval between save events."),
+    defineParameter(name = "plotIgnitions", class = 'logical', FALSE, NA, NA,
+                    desc = "plot ignitions and escapes as SpatialPoints"),
     defineParameter(name = ".plotInitialTime", class = "numeric", default = NA,
                     desc = "optional. When to start plotting."),
     defineParameter(name = ".plotInterval", class = "numeric", default = NA,
@@ -65,12 +67,15 @@ doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE) {
     eventType,
     init = {
 
-      sim$rstCurrentBurnList <- list()
+      #trying to avoid the raster warning no non-missing arguments to max
+      sim$burnMap <- sim$flammableRTM
+      sim$burnMap[getValues(sim$burnMap) == 0] <- NA #make a map of flammable pixels with value 0
+      sim$burnMap[getValues(sim$burnMap) == 1] <- 0
 
       sim <- scheduleEvent(sim, eventTime = P(sim)$.runInitialTime, moduleName, "burn", eventPriority = 5.13)
 
       if (!is.na(P(sim)$.plotInitialTime))
-        sim <- scheduleEvent(sim, P(sim)$.saveInitialTime, moduleName, "plot", .last())
+        sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, moduleName, "plot", eventPriority = .last())
     },
     burn = {
       sim <- burn(sim)
@@ -82,7 +87,7 @@ doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE) {
       sim <- plot(sim)
 
       if (!is.na(P(sim)$.plotInterval))
-        sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, moduleName, "plot")
+        sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, moduleName, "plot", eventPriority = .last())
     },
     warning(paste("Undefined event type: '", current(sim)[1, "eventType", with = FALSE],
                   "' in module '", current(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
@@ -108,6 +113,9 @@ burn <- function(sim) {
   ignited <- sample(ignited) # Randomize order
 
   rm(ignitionProbs)
+  if (P(sim)$plotIgnitions) {
+    mod$ignitions <- ignited
+  }
 
   if (length(ignited) > 0L) {
     if ("fireSense_EscapePredict" %in% P(sim)$whichModulesToPrepare) {
@@ -126,13 +134,10 @@ burn <- function(sim) {
       from[, `:=` (probEscape = sim$fireSense_EscapePredicted[from], to = NULL)]
 
       # Update probEscape to get p0
+      from <- from[!is.na(probEscape),]
       p0 <- with(
-        from[adjacent, on = "from"][!is.na(probEscape)][
-          ,
-          probEscape := (1 - (1 - probEscape)^(1 / .N)),
-          by = "from"
-        ],
-        {
+        data = from[adjacent, on = "from"][, probEscape := (1 - (1 - probEscape)^(1 / .N)), by = "from"],
+        expr = {
           p0 <- sim$fireSense_EscapePredicted
           p0[to] <- probEscape
           p0
@@ -147,6 +152,10 @@ burn <- function(sim) {
         directions = 8L,
         asRaster = FALSE
       )
+
+      if (P(sim)$plotIgnitions) {
+        mod$escapes <- unique(mod$spreadState[state == "activeSource",]$initialPixels)
+      }
     }
     if ("fireSense_SpreadPredict" %in% P(sim)$whichModulesToPrepare) {
       ## Spread
@@ -180,7 +189,39 @@ burn <- function(sim) {
 }
 
 plot <- function(sim) {
-  Plot(sim$rstCurrentBurn, sim$burnMap, title = c("Burn map", "Cumulative burn map"))
+
+  if (P(sim)$plotIgnitions){
+   #TODO: make this figure a ggplot instead
+
+    #for potting
+    ignitions <- mod$ignitions[!mod$ignitions %in% mod$escapes]
+
+    ignitions <- raster::xyFromCell(sim$flammableRTM, cell = mod$ignitions)
+    escapes <- raster::xyFromCell(sim$flammableRTM, cell = mod$escapes)
+    ignitions <- SpatialPointsDataFrame(coords = ignitions,
+                                        proj4string = crs(sim$flammableRTM),
+                                        data = data.frame(color = rep("yellow",
+                                                                      times = nrow(ignitions))))
+
+    escapes <- SpatialPointsDataFrame(coords = escapes,
+                                      proj4string = crs(sim$flammableRTM),
+                                      data = data.frame(color = rep("red",
+                                                                    times = nrow(escapes))))
+    flamMap <- sim$flammableRTM
+    IandE <- rbind(ignitions, escapes)
+
+    clearPlot()
+    mapTitle <- paste0("ignitions and escapes in ", time(sim))
+    raster::plot(flamMap, col = c("#8DA0CB", "#66C2A5"), main = mapTitle)
+    raster::plot(IandE, add = TRUE, col = IandE$color, pch = 19, cex = 0.5)
+
+    mod$ignitions <- NULL
+    mod$escapes <- NULL
+  }
+  mapTitle <- paste0("Burn map ", time(sim))
+  clearPlot()
+  Plot(sim$rstCurrentBurn, new = TRUE,  title = mapTitle)
+  Plot(sim$burnMap, title = "Cumulative burn map")
 
   invisible(sim)
 }
