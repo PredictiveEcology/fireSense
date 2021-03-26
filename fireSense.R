@@ -18,7 +18,7 @@ defineModule(sim, list(
   parameters = rbind(
     #defineParameter("paramName", "paramClass", default, min, max, "parameter description")),
     defineParameter(name = ".runInitialTime", class = "numeric", default = start(sim),
-                    desc ="time to simulate initial fire"),
+                    desc = "time to simulate initial fire"),
     defineParameter(name = "whichModulesToPrepare", class = "character",
                     default = c("fireSense_SpreadPredict", "fireSense_IgnitionPredict", "fireSense_EscapePredict"),
                     NA, NA, desc = "Which fireSense fit modules to prep? defaults to all 3. Must include ignition"),
@@ -66,7 +66,6 @@ doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE) {
   switch(
     eventType,
     init = {
-
       #trying to avoid the raster warning no non-missing arguments to max
       sim$burnMap <- sim$flammableRTM
       sim$burnMap[getValues(sim$burnMap) == 0] <- NA #make a map of flammable pixels with value 0
