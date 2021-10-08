@@ -182,7 +182,7 @@ burn <- function(sim) {
 
       tempDT <- sim$burnDT[, .(.N), by = "initialPixels"]
       tempDT$year <- time(sim)
-      tempDT$areaBurnedHa <- tempDT$N * prod(res(sim$fireSense_SpreadPredicted))*1e-4
+      tempDT$areaBurnedHa <- tempDT$N * prod(res(sim$fireSense_SpreadPredicted)) * 1e-4
       setnames(tempDT, c("initialPixels"), c("igLoc"))
       sim$burnSummary <- rbind(sim$burnSummary, tempDT)
     }
@@ -192,8 +192,7 @@ burn <- function(sim) {
 }
 
 plot <- function(sim) {
-
-  if (P(sim)$plotIgnitions){
+  if (P(sim)$plotIgnitions) {
    #TODO: make this figure a ggplot instead
 
     #for potting
