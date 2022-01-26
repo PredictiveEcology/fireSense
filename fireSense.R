@@ -93,7 +93,6 @@ doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE) {
 }
 
 burn <- function(sim) {
-
   moduleName <- current(sim)$moduleName
 
   ## Ignite
@@ -128,7 +127,7 @@ burn <- function(sim) {
         adjacent <- as.data.table(adjacent)
 
       from <- unique(adjacent, by = "from")
-      from[, `:=` (probEscape = sim$fireSense_EscapePredicted[from], to = NULL)]
+      from[, `:=`(probEscape = sim$fireSense_EscapePredicted[from], to = NULL)]
 
       # Update probEscape to get p0
       from <- from[!is.na(probEscape),]
@@ -151,7 +150,7 @@ burn <- function(sim) {
       )
 
       if (!is.na(P(sim)$.plotInitialTime)) {
-        mod$escapes <- unique(mod$spreadState[state == "activeSource",]$initialPixels)
+        mod$escapes <- unique(mod$spreadState[state == "activeSource", ]$initialPixels)
       }
     }
     if ("fireSense_SpreadPredict" %in% P(sim)$whichModulesToPrepare) {
