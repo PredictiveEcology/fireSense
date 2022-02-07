@@ -65,9 +65,14 @@ doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE) {
     eventType,
     init = {
       ## bail early if there's a problem with ignition, escape, or spread rasters
-      stopifnot(length(na.omit(sim$fireSense_IgnitionPredicted[])) > 0)
-      stopifnot(length(na.omit(sim$fireSense_EscapePredicted[])) > 0)
-      stopifnot(length(na.omit(sim$fireSense_SpreadPredicted[])) > 0)
+      if (!is.null(sim$fireSense_IgnitionPredicted))
+        stopifnot(length(na.omit(sim$fireSense_IgnitionPredicted[])) > 0)
+
+      if (!is.null(sim$fireSense_EscapePredicted))
+        stopifnot(length(na.omit(sim$fireSense_EscapePredicted[])) > 0)
+
+      if (!is.null(sim$fireSense_SpreadPredicted))
+        stopifnot(length(na.omit(sim$fireSense_SpreadPredicted[])) > 0)
 
       #trying to avoid the raster warning no non-missing arguments to max
       sim$burnMap <- setValues(raster(sim$flammableRTM), getValues(sim$flammableRTM))
