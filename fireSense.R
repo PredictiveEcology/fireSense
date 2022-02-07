@@ -64,6 +64,11 @@ doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE) {
   switch(
     eventType,
     init = {
+      ## bail early if there's a problem with ignition, esacpe, or spread rasters
+      stopifnot(length(na.omit(sim$fireSense_IgnitionPredicted[])) > 0)
+      stopifnot(length(na.omit(sim$fireSense_EscapePredicted[])) > 0)
+      stopifnot(length(na.omit(sim$fireSense_SpreadPredicted[])) > 0)
+
       #trying to avoid the raster warning no non-missing arguments to max
       sim$burnMap <- setValues(raster(sim$flammableRTM), getValues(sim$flammableRTM))
       sim$burnMap[getValues(sim$burnMap) == 0] <- NA #make a map of flammable pixels with value 0
@@ -156,6 +161,7 @@ burn <- function(sim) {
     if ("fireSense_SpreadPredict" %in% P(sim)$whichModulesToPrepare) {
       ## Spread
       # Note: if none of the cells are active SpaDES.tools::spread2() returns spreadState unchanged
+
       mod$spreadState <- SpaDES.tools::spread2(
         landscape = sim$fireSense_SpreadPredicted,
         spreadProb = sim$fireSense_SpreadPredicted,
