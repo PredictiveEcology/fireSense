@@ -56,7 +56,7 @@ defineModule(sim, list(
 ))
 
 ## event types
-#   - type `init` is required for initialiazation
+#   - type `init` is required for initialization
 
 doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE) {
   moduleName <- current(sim)$moduleName
@@ -64,7 +64,7 @@ doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE) {
   switch(
     eventType,
     init = {
-      ## bail early if there's a problem with ignition, esacpe, or spread rasters
+      ## bail early if there's a problem with ignition, escape, or spread rasters
       stopifnot(length(na.omit(sim$fireSense_IgnitionPredicted[])) > 0)
       stopifnot(length(na.omit(sim$fireSense_EscapePredicted[])) > 0)
       stopifnot(length(na.omit(sim$fireSense_SpreadPredicted[])) > 0)
