@@ -6,52 +6,56 @@ defineModule(sim, list(
                  weather and land-cover).",
   keywords = c("fire", "percolation", "environmental control", "feedback",
                "weather", "vegetation", "land-cover"),
-  authors = c(person("Jean", "Marchal", email = "jean.d.marchal@gmail.com", role = c("aut", "cre"))),
+  authors = c(
+    person("Jean", "Marchal", email = "jean.d.marchal@gmail.com", role = c("aut", "cre")),
+    person(c("Alex", "M."), "Chubaty", email = "achubaty@for-cast.ca", role = "ctb")
+  ),
   childModules = character(),
   version = numeric_version("0.1.0"),
   spatialExtent = raster::extent(rep(NA_real_, 4)),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list("citation.bib"),
-  documentation = list("README.txt", "fireSense.Rmd"),
+  documentation = list("README.md", "fireSense.Rmd"), ## same file
   reqdPkgs = list("data.table", "raster", "ggspatial", "ggplot2"),
   parameters = rbind(
     #defineParameter("paramName", "paramClass", default, min, max, "parameter description")),
-    defineParameter(name = ".runInitialTime", class = "numeric", default = start(sim),
+    defineParameter(".plotInitialTime", "numeric", default = NA,
+                    desc = "optional. When to start plotting."),
+    defineParameter(".plotInterval", "numeric", default = NA,
+                    desc = "optional. Interval between plot events."),
+    defineParameter(".runInitialTime", "numeric", default = start(sim),
                     desc = "time to simulate initial fire"),
-    defineParameter(name = "whichModulesToPrepare", class = "character",
-                    default = c("fireSense_SpreadPredict", "fireSense_IgnitionPredict", "fireSense_EscapePredict"),
-                    NA, NA, desc = "Which fireSense fit modules to prep? defaults to all 3. Must include ignition"),
-    defineParameter(name = ".runInterval", class = "numeric", default = 1,
+    defineParameter(".runInterval", "numeric", default = 1,
                     desc = "optional. Interval between two runs of this module,
                             expressed in units of simulation time. By default, 1 year."),
-    defineParameter(name = ".saveInitialTime", class = "numeric", default = NA,
+    defineParameter(".saveInitialTime", "numeric", default = NA,
                     desc = "optional. When to start saving output to a file."),
-    defineParameter(name = ".saveInterval", class = "numeric", default = NA,
+    defineParameter(".saveInterval", "numeric", default = NA,
                     desc = "optional. Interval between save events."),
-    defineParameter(name = ".plotInitialTime", class = "numeric", default = NA,
-                    desc = "optional. When to start plotting."),
-    defineParameter(name = ".plotInterval", class = "numeric", default = NA,
-                    desc = "optional. Interval between plot events.")
+    defineParameter("whichModulesToPrepare", "character",
+                    default = c("fireSense_SpreadPredict", "fireSense_IgnitionPredict", "fireSense_EscapePredict"),
+                    NA, NA,
+                    desc = "Which fireSense fit modules to prep? defaults to all 3. Must include ignition")
   ),
   inputObjects = rbind(
-    expectsInput(objectName = "fireSense_IgnitionPredicted", objectClass = "data.frame",
+    expectsInput("fireSense_IgnitionPredicted", "data.frame",
                  desc = "A RasterLayer of ignition probabilities."),
-    expectsInput(objectName = "fireSense_EscapePredicted", objectClass = "RasterLayer",
+    expectsInput("fireSense_EscapePredicted", "RasterLayer",
                  desc = "A RasterLayer of escape probabilities."),
-    expectsInput(objectName = "fireSense_SpreadPredicted", objectClass = "RasterLayer",
+    expectsInput("fireSense_SpreadPredicted", "RasterLayer",
                  desc = "A RasterLayer of spread probabilities.")
   ),
   outputObjects = rbind(
-    createsOutput(objectName = "rstCurrentBurn", objectClass = "RasterLayer",
+    createsOutput("rstCurrentBurn", "RasterLayer",
                   desc = "A binary raster with 1 values representing burned pixels."),
-    createsOutput(objectName = "rstAnnualBurnID", objectClass = "RasterLayer",
+    createsOutput("rstAnnualBurnID", "RasterLayer",
                   desc = "annual raster whose values distinguish individual fires"),
-    createsOutput(objectName = "burnMap", objectClass = "RasterLayer",
+    createsOutput("burnMap", "RasterLayer",
                   desc = "A raster of cumulative burns"),
-    createsOutput(objectName = "burnDT", objectClass = "data.table",
+    createsOutput("burnDT", "data.table",
                   desc = "Data table with pixel IDs of most recent burn."),
-    createsOutput(objectName = "burnSummary", objectClass = "data.table", desc = "Describes details of all burned pixels.")
+    createsOutput("burnSummary", "data.table", desc = "Describes details of all burned pixels.")
   )
 ))
 
@@ -74,9 +78,9 @@ doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE) {
       if (!is.null(sim$fireSense_SpreadPredicted))
         stopifnot(length(na.omit(sim$fireSense_SpreadPredicted[])) > 0)
 
-      #trying to avoid the raster warning no non-missing arguments to max
+      ## trying to avoid the raster warning no non-missing arguments to max
       sim$burnMap <- setValues(raster(sim$flammableRTM), getValues(sim$flammableRTM))
-      sim$burnMap[getValues(sim$burnMap) == 0] <- NA #make a map of flammable pixels with value 0
+      sim$burnMap[getValues(sim$burnMap) == 0] <- NA ## make a map of flammable pixels with value 0
       sim$burnMap[!is.na(getValues(sim$burnMap)) & getValues(sim$burnMap) == 1] <- 0
 
       sim <- scheduleEvent(sim, eventTime = P(sim)$.runInitialTime, moduleName, "burn", eventPriority = 5.13)

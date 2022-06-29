@@ -3,45 +3,24 @@ title: "fireSense"
 author: "Jean Marchal"
 date: "`r format(Sys.time(), '%B %Y')`"
 output:
-  html_document: default
-  pdf_document: default
+  html_document:
+    keep_md: yes
+editor_options:
+  chunk_output_type: console
 ---
 
-# Overview
-A landscape fire model sensitive to environmental changes (e.g. weather and land-cover).
-
-# Download the module
-```{r download module, eval = FALSE, echo = TRUE}
-library(SpaDES)
-
-moduleName <- "fireSense"
-
-workingDirectory <- tempdir() # Location where the module will be downloaded
-
-downloadModule(moduleName, path = workingDirectory)
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE, results = "hold") ## TODO: use 'eval = TRUE'
 ```
 
+# Overview
+
+A landscape fire model sensitive to environmental changes (e.g. weather and land-cover).
+
 # Usage
-## Module parameters
-Name|Default|Description
-----|:-------|---------------------------------------------------------------------
-`mapping`|`NULL`|optional named vector or list of character strings mapping one or more inputs required by the module to objects loaded in the simList environment.
-`.runInitialTime`|`start(simList)`|when to start this module? By default, the start time of the simulation.
-`.runInterval`|`1`|optional. Interval between two runs of this module, expressed in units of simulation time. By default, 1 year.
-`.saveInitialTime`|`NA`|optional. When to start saving output to a file.
-`.saveInterval`|`NA`|optional. Interval between save events.
-`.plotInitialTime`|`NA`|optional. When to start plotting.
-`.plotInterval`|`NA`|optional. Interval between plot events.
-|||
 
-## Usage example
 ```{r module usage example, eval = FALSE}
-library(SpaDES)
-library(magrittr)
-
-# Packages required by the module
-library(data.table)
-library(raster)
+Require(c("SpaDES.core", "SpaDES.tools"))
 
 set.seed(1)
 
@@ -82,7 +61,15 @@ mySim <- simInit(times = times, params = parameters, modules = modules, objects 
 spades(mySim)
 ```
 
+# Parameters
+
+```{r moduleParams, echo = FALSE, eval = TRUE}
+df_params <- SpaDES.core::moduleParams("fireSense", "..")
+knitr::kable(df_params)
+```
+
 # Events
+
 - ignite fires
 - determine which fires escape
 - spread escaped fires
@@ -90,23 +77,33 @@ spades(mySim)
 - plot
 
 ## Plotting
+
 - **Burn map**: Pixels burned this timestep.
 - **Cumulative burn map**: Number of times each pixel burned during the simulation..
 
 ## Saving
+
 - **burnMap**: A RasterLayer describing how which pixels burned this timestep.
 - **burnMapCumul**: A RasterLayer describing how many times each pixel burned over the course of the simulation.
 
 
 # Data dependencies
-## Input data
-- **ignitionProbRaster**: a RasterLayer or RasterStack (time series) describing spatial variations in ignition probabilities.
-- **escapeProbRaster**: a RasterLayer or RasterStack (time series) describing spatial variations in escape probabilities.
-- **spreadProbRaster**: a RasterLayer or RasterStack (time series) describing spatial variations in spread probabilities.
+
+```{r moduleInputs, echo = FALSE, eval = TRUE}
+df_inputs <- SpaDES.core::moduleInputs("fireSense", "..")
+knitr::kable(df_inputs)
+```
 
 ## Output data
-see [Saving](#saving).
+
+Description of the module outputs.
+
+```{r moduleOutputs, echo = FALSE, eval = TRUE}
+df_outputs <- SpaDES.core::moduleOutputs("fireSense", "..")
+knitr::kable(df_outputs)
+```
 
 # Links to other modules
+
 This module should be coupled with a dynamic vegetation model.
 
