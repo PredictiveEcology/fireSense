@@ -27,8 +27,8 @@ defineModule(sim, list(
     defineParameter(".runInitialTime", "numeric", default = start(sim),
                     desc = "time to simulate initial fire"),
     defineParameter(".runInterval", "numeric", default = 1,
-                    desc = "optional. Interval between two runs of this module,
-                            expressed in units of simulation time. By default, 1 year."),
+                    desc = paste("optional. Interval between two runs of this module,",
+                                 "expressed in units of simulation time. By default, 1 year.")),
     defineParameter(".saveInitialTime", "numeric", default = NA,
                     desc = "optional. When to start saving output to a file."),
     defineParameter(".saveInterval", "numeric", default = NA,
@@ -36,7 +36,8 @@ defineModule(sim, list(
     defineParameter("whichModulesToPrepare", "character",
                     default = c("fireSense_SpreadPredict", "fireSense_IgnitionPredict", "fireSense_EscapePredict"),
                     NA, NA,
-                    desc = "Which fireSense fit modules to prep? defaults to all 3. Must include ignition")
+                    desc = paste("Which fireSense predict modules to prep? Defaults to all 3.",
+                                 "Must include fireSense_IgnitionPredict."))
   ),
   inputObjects = rbind(
     expectsInput("fireSense_IgnitionPredicted", "data.frame",
@@ -47,15 +48,16 @@ defineModule(sim, list(
                  desc = "A RasterLayer of spread probabilities.")
   ),
   outputObjects = rbind(
-    createsOutput("rstCurrentBurn", "RasterLayer",
-                  desc = "A binary raster with 1 values representing burned pixels."),
-    createsOutput("rstAnnualBurnID", "RasterLayer",
-                  desc = "annual raster whose values distinguish individual fires"),
-    createsOutput("burnMap", "RasterLayer",
-                  desc = "A raster of cumulative burns"),
     createsOutput("burnDT", "data.table",
                   desc = "Data table with pixel IDs of most recent burn."),
-    createsOutput("burnSummary", "data.table", desc = "Describes details of all burned pixels.")
+    createsOutput("burnMap", "RasterLayer",
+                  desc = "A raster of cumulative burns"),
+    createsOutput("burnSummary", "data.table",
+                  desc = "Describes details of all burned pixels."),
+    createsOutput("rstAnnualBurnID", "RasterLayer",
+                  desc = "annual raster whose values distinguish individual fires"),
+    createsOutput("rstCurrentBurn", "RasterLayer",
+                  desc = "A binary raster with 1 values representing burned pixels.")
   )
 ))
 
