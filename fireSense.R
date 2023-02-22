@@ -274,7 +274,7 @@ plot <- function(sim) {
 
     mod$ignitions <- NULL
     mod$escapes <- NULL
-
-    invisible(sim)
   }
+
+  invisible(sim)
 }
