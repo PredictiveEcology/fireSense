@@ -81,9 +81,12 @@ doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE) {
         stopifnot(length(na.omit(sim$fireSense_SpreadPredicted[])) > 0)
 
       ## trying to avoid the raster warning no non-missing arguments to max
-      sim$burnMap <- setValues(raster(sim$flammableRTM), getValues(sim$flammableRTM))
-      sim$burnMap[getValues(sim$burnMap) == 0] <- NA ## make a map of flammable pixels with value 0
-      sim$burnMap[!is.na(getValues(sim$burnMap)) & getValues(sim$burnMap) == 1] <- 0
+      sim$burnMap <- rast(sim$rasterToMatch)
+      burnVals <- as.vector(sim$burnMap)
+      sim$burnMap[burnVals == 0] <- NA
+      sim$burnMap[burnVals == 1] <- 0
+      rm(burnVals)
+      gc()
 
       sim <- scheduleEvent(sim, eventTime = P(sim)$.runInitialTime, moduleName, "burn", eventPriority = 5.13)
 
