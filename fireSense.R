@@ -17,7 +17,7 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = list("README.md", "fireSense.Rmd"), ## same file
-  reqdPkgs = list("data.table", "raster", "ggspatial", "ggplot2"),
+  reqdPkgs = list("data.table", "ggplot2", "ggspatial", "raster", "terra"),
   parameters = rbind(
     #defineParameter("paramName", "paramClass", default, min, max, "parameter description")),
     defineParameter(".plotInitialTime", "numeric", default = NA,
