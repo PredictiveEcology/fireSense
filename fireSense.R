@@ -41,22 +41,22 @@ defineModule(sim, list(
   ),
   inputObjects = rbind(
     expectsInput("fireSense_IgnitionPredicted", "data.frame",
-                 desc = "A RasterLayer of ignition probabilities."),
-    expectsInput("fireSense_EscapePredicted", "RasterLayer",
-                 desc = "A RasterLayer of escape probabilities."),
-    expectsInput("fireSense_SpreadPredicted", "RasterLayer",
-                 desc = "A RasterLayer of spread probabilities.")
+                 desc = "A SpatRaster of ignition probabilities."),
+    expectsInput("fireSense_EscapePredicted", "SpatRaster",
+                 desc = "A SpatRaster of escape probabilities."),
+    expectsInput("fireSense_SpreadPredicted", "SpatRaster",
+                 desc = "A SpatRaster of spread probabilities.")
   ),
   outputObjects = rbind(
     createsOutput("burnDT", "data.table",
                   desc = "Data table with pixel IDs of most recent burn."),
-    createsOutput("burnMap", "RasterLayer",
+    createsOutput("burnMap", "SpatRaster",
                   desc = "A raster of cumulative burns"),
     createsOutput("burnSummary", "data.table",
                   desc = "Describes details of all burned pixels."),
-    createsOutput("rstAnnualBurnID", "RasterLayer",
+    createsOutput("rstAnnualBurnID", "SpatRaster",
                   desc = "annual raster whose values distinguish individual fires"),
-    createsOutput("rstCurrentBurn", "RasterLayer",
+    createsOutput("rstCurrentBurn", "SpatRaster",
                   desc = "A binary raster with 1 values representing burned pixels.")
   )
 ))
@@ -146,7 +146,8 @@ burn <- function(sim) {
         adjacent <- as.data.table(adjacent)
 
       from <- unique(adjacent, by = "from")
-      from[, `:=`(probEscape = sim$fireSense_EscapePredicted[from], to = NULL)]
+      pix <- from$from
+      from[, `:=`(probEscape = as.vector(sim$fireSense_EscapePredicted)[pix])]
 
       # Update probEscape to get p0
       from <- from[!is.na(probEscape),]
