@@ -82,7 +82,7 @@ doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE) {
 
       ## trying to avoid the raster warning no non-missing arguments to max
       sim$burnMap <- rast(sim$rasterToMatch)
-      burnVals <- as.vector(sim$burnMap)
+      burnVals <- as.vector(sim$flammableRTM)
       sim$burnMap[burnVals == 0] <- NA
       sim$burnMap[burnVals == 1] <- 0
       rm(burnVals)
@@ -186,8 +186,8 @@ burn <- function(sim) {
 
       mod$spreadState[ , fire_id := .GRP, by = "initialPixels"] # Add an fire_id column
 
-      sim$rstAnnualBurnID <- raster(sim$fireSense_SpreadPredicted)
-      sim$rstCurrentBurn <- raster(sim$fireSense_SpreadPredicted)
+      sim$rstAnnualBurnID <- rast(sim$fireSense_SpreadPredicted)
+      sim$rstCurrentBurn <- rast(sim$fireSense_SpreadPredicted)
 
       sim$rstAnnualBurnID[mod$spreadState$pixels] <- mod$spreadState$fire_id
       sim$rstCurrentBurn[mod$spreadState$pixels] <- 1
