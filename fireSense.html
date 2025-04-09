@@ -2973,7 +2973,7 @@ border-radius: 0px;
 
 <h1 class="title toc-ignore">fireSense Manual</h1>
 <h3 class="subtitle">v.0.0.0.9000</h3>
-<h4 class="date">Last updated: 2025-04-08</h4>
+<h4 class="date">Last updated: 2025-04-09</h4>
 
 </div>
 
@@ -3396,11 +3396,15 @@ objects &lt;- list(
   spreadProbRaster = spreadProbRaster
 )
 
+# paths &lt;- list(
+#   # cachePath = file.path(outputDir, &quot;cache&quot;),
+#   modulePath = &quot;..&quot;
+#   # inputPath = inputDir,
+#   # outputPath = outputDir
+# )
+
 paths &lt;- list(
-  # cachePath = file.path(outputDir, &quot;cache&quot;),
   modulePath = &quot;..&quot;
-  # inputPath = inputDir,
-  # outputPath = outputDir
 )
 
 mySim &lt;- simInit(times = times, params = parameters, modules = modules, objects = objects, paths = paths)
