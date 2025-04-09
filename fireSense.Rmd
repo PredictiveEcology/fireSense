@@ -138,11 +138,15 @@ objects <- list(
   spreadProbRaster = spreadProbRaster
 )
 
+# paths <- list(
+#   # cachePath = file.path(outputDir, "cache"),
+#   modulePath = ".."
+#   # inputPath = inputDir,
+#   # outputPath = outputDir
+# )
+
 paths <- list(
-  # cachePath = file.path(outputDir, "cache"),
   modulePath = ".."
-  # inputPath = inputDir,
-  # outputPath = outputDir
 )
 
 mySim <- simInit(times = times, params = parameters, modules = modules, objects = objects, paths = paths)
