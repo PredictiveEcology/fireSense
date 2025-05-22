@@ -40,12 +40,10 @@ defineModule(sim, list(
                           "Must include `fireSense_IgnitionPredict`."))
   ),
   inputObjects = rbind(
-    expectsInput("fireSense_IgnitionPredicted", "SpatRaster",
-                 "A SpatRaster of ignition probabilities."),
-    expectsInput("fireSense_EscapePredicted", "SpatRaster",
-                 "A SpatRaster of escape probabilities."),
     expectsInput("fireSense_SpreadPredicted", "SpatRaster",
-                 "A SpatRaster of spread probabilities.")
+                 "A SpatRaster of spread probabilities."),
+    expectsInput("ignitionsAndEscapes", "data.table",
+                 "A data.table containing pixelIndex, ignition, and escape")
   ),
   outputObjects = rbind(
     createsOutput("burnDT", "data.table",
@@ -71,11 +69,6 @@ doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE) {
     eventType,
     init = {
       ## bail early if there's a problem with ignition, escape, or spread rasters
-      if (!is.null(sim$fireSense_IgnitionPredicted))
-        stopifnot(length(na.omit(sim$fireSense_IgnitionPredicted[])) > 0)
-
-      if (!is.null(sim$fireSense_EscapePredicted))
-        stopifnot(length(na.omit(sim$fireSense_EscapePredicted[])) > 0)
 
       if (!is.null(sim$fireSense_SpreadPredicted))
         stopifnot(length(na.omit(sim$fireSense_SpreadPredicted[])) > 0)
@@ -114,65 +107,12 @@ doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE) {
 burn <- function(sim) {
   moduleName <- current(sim)$moduleName
 
-  ## Ignite
-  notNA <- which(!is.na(sim$fireSense_IgnitionPredicted[]))
-  ignitionProbs <- sim$fireSense_IgnitionPredicted[notNA]
 
-  ignited <- notNA[which(
-    rbinom(n = length(ignitionProbs),
-           size = 1,
-           prob = pmin(ignitionProbs, 1)
-    ) > 0
-  )]
+  ignited <- sim$ignitionsAndEscapes
+  #this will be a new object, containing ignitions and optionally escapes
 
-  ignited <- sample(ignited) # Randomize order
-
-  rm(ignitionProbs)
-  if (!is.na(P(sim)$.plotInitialTime)) {
-    mod$ignitions <- ignited
-  }
-
+  #this test will need to be different
   if (length(ignited) > 0L) {
-    if ("fireSense_EscapePredict" %in% P(sim)$whichModulesToPrepare) {
-      ## Escape
-      adjacent <- SpaDES.tools::adj(
-        x = sim$fireSense_EscapePredicted,
-        cells = ignited,
-        directions = 8,
-        returnDT = TRUE
-      )
-
-      if (is.matrix(adjacent))
-        adjacent <- as.data.table(adjacent)
-
-      from <- unique(adjacent, by = "from")
-      pix <- from$from
-      from[, `:=`(probEscape = as.vector(sim$fireSense_EscapePredicted)[pix])]
-
-      # Update probEscape to get p0
-      from <- from[!is.na(probEscape),]
-      p0 <- with(
-        data = from[adjacent, on = "from"][, probEscape := (1 - (1 - probEscape)^(1 / .N)), by = "from"],
-        expr = {
-          p0 <- sim$fireSense_EscapePredicted
-          p0[to] <- probEscape
-          p0
-        }
-      )
-
-      mod$spreadState <- SpaDES.tools::spread2(
-        landscape = sim$fireSense_EscapePredicted,
-        start = ignited,
-        iterations = 1,
-        spreadProb = p0,
-        directions = 8L,
-        asRaster = FALSE
-      )
-
-      if (!is.na(P(sim)$.plotInitialTime)) {
-        mod$escapes <- unique(mod$spreadState[state == "activeSource", ]$initialPixels)
-      }
-    }
     if ("fireSense_SpreadPredict" %in% P(sim)$whichModulesToPrepare) {
       ## Spread
       # Note: if none of the cells are active SpaDES.tools::spread2() returns spreadState unchanged
