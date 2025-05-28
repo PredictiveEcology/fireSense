@@ -42,8 +42,8 @@ defineModule(sim, list(
   inputObjects = rbind(
     expectsInput("fireSense_SpreadPredicted", "SpatRaster",
                  "A SpatRaster of spread probabilities."),
-    expectsInput("ignitionsAndEscapes", "data.table",
-                 "A data.table containing pixelIndex, ignition, and escape")
+    expectsInput("ignitionAndEscapes", "data.table",
+                 "A data.table containing `pixelID` and `escaped`, where 1/0 denotes success/failure")
   ),
   outputObjects = rbind(
     createsOutput("burnDT", "data.table",
@@ -108,20 +108,21 @@ burn <- function(sim) {
   moduleName <- current(sim)$moduleName
 
 
-  ignited <- sim$ignitionsAndEscapes
+  escaped <- sum(sim$ignitionAndEscapes$escaped)
   #this will be a new object, containing ignitions and optionally escapes
 
   #this test will need to be different
-  if (length(ignited) > 0L) {
+  if (length(escaped) > 0L) {
     if ("fireSense_SpreadPredict" %in% P(sim)$whichModulesToPrepare) {
       ## Spread
       # Note: if none of the cells are active SpaDES.tools::spread2() returns spreadState unchanged
+      successfulEscapes <- sim$ignitionAndEscapes[escaped == 1]$pixelID
 
       mod$spreadState <- SpaDES.tools::spread2(
         landscape = sim$fireSense_SpreadPredicted,
         spreadProb = sim$fireSense_SpreadPredicted,
         directions = 8L,
-        start = mod$spreadState,
+        start = successfulEscapes,
         asRaster = FALSE)
 
       mod$spreadState[ , fire_id := .GRP, by = "initialPixels"] # Add an fire_id column
@@ -160,66 +161,69 @@ plot <- function(sim) {
     flam[flam$value == 0,]$value <- "unburnable"
     flam[flam$value == 1,]$value <- "burnable"
 
-    escapes <- raster::xyFromCell(sim$flammableRTM, cell = mod$escapes) %>%
+    escapes <- raster::xyFromCell(sim$flammableRTM,
+                                  cell = sim$ignitionAndEscapes[escaped == 1,]$pixelID) %>%
       as.data.table(.)
-    ignitions <- raster::xyFromCell(sim$flammableRTM, cell = mod$ignitions) %>%
+    ignitions <- raster::xyFromCell(sim$flammableRTM,
+                                    cell = sim$ignitionAndEscapes$pixelID) %>%
       as.data.table(.)
 
+    #TODO this all needs review
     ## there should be an easier anti-join in data.table
-    both <- rbind(escapes, ignitions)
-    both <- both[, .N, .(x, y)] #want only xy of points that did not escape
-    ignitions <- both[N == 1, .(x, y)]
-
-    ignitions <- SpatialPointsDataFrame(coords = ignitions,
-                                        proj4string = crs(sim$flammableRTM),
-                                        data = data.frame(stat = as.factor(rep(x = "ignited",
-                                                                               times = nrow(ignitions))))
-    )
-
-    escapes <- SpatialPointsDataFrame(coords = escapes,
-                                      proj4string = crs(sim$flammableRTM),
-                                      data = data.frame(stat = as.factor(rep(x = "escaped",
-                                                                             times = nrow(escapes))))
-    )
-
-    ignitions <- ggspatial::df_spatial(ignitions)
-    escapes <- ggspatial::df_spatial(escapes)
-    burns <- as.data.frame(as(sim$rstCurrentBurn, "SpatialPixelsDataFrame"))
-    names(burns) <- c("value", "x", "y")
-    burns$value <- "burned"
-    burns$value <- factor(burns$value, levels = c("ignited", "escaped", "burned"))
-    g <- ggplot() +
-      geom_raster(data = flam,
-                  aes(x = x, y = y, fill = value),
-                  show.legend = TRUE) +
-      geom_raster(data = burns,
-                  aes(x = x, y = y, fill = value),
-                  show.legend = FALSE) +
-      geom_point(data = ignitions,
-                 aes(x = x, y = y),
-                 color = "#EFFD5F",
-                 show.legend = FALSE,
-                 cex = 0.7) +
-      geom_point(data = escapes,
-                 aes(x = x, y = y),
-                 color = "#EC9706",
-                 show.legend = FALSE,
-                 cex = 0.7) +
-      theme_minimal() +
-      scale_fill_manual(name = "fire status",
-                        values = c("burnable" = "#028A0F", #green = burnable
-                                   "burned" = "#D0312D",  #red = burned
-                                   "escaped" = "#EC9706", #orange = escaped
-                                   "ignited" = "#EFFD5F", #yellow = #ignited
-                                   "unburnable" = "#C5C6D0"), #grey = unburnable
-                        drop = FALSE)
-    #there is a warning about geom_tile, but it can't be used with geom_point
-    ggsave(plot = g, filename = paste0('firePlotGG', time(sim), ".png"),
-           device = "png", path = file.path(outputPath(sim), "figures"))
-
-    mod$ignitions <- NULL
-    mod$escapes <- NULL
-  }
+  #   both <- rbind(escapes, ignitions)
+  #   both <- both[, .N, .(x, y)] #want only xy of points that did not escape
+  #   ignitions <- both[N == 1, .(x, y)]
+  #
+  #   ignitions <- SpatialPointsDataFrame(coords = ignitions,
+  #                                       proj4string = crs(sim$flammableRTM),
+  #                                       data = data.frame(stat = as.factor(rep(x = "ignited",
+  #                                                                              times = nrow(ignitions))))
+  #   )
+  #
+  #   escapes <- SpatialPointsDataFrame(coords = escapes,
+  #                                     proj4string = crs(sim$flammableRTM),
+  #                                     data = data.frame(stat = as.factor(rep(x = "escaped",
+  #                                                                            times = nrow(escapes))))
+  #   )
+  #
+  #   ignitions <- ggspatial::df_spatial(ignitions)
+  #   escapes <- ggspatial::df_spatial(escapes)
+  #   burns <- as.data.frame(as(sim$rstCurrentBurn, "SpatialPixelsDataFrame"))
+  #   names(burns) <- c("value", "x", "y")
+  #   burns$value <- "burned"
+  #   burns$value <- factor(burns$value, levels = c("ignited", "escaped", "burned"))
+  #   g <- ggplot() +
+  #     geom_raster(data = flam,
+  #                 aes(x = x, y = y, fill = value),
+  #                 show.legend = TRUE) +
+  #     geom_raster(data = burns,
+  #                 aes(x = x, y = y, fill = value),
+  #                 show.legend = FALSE) +
+  #     geom_point(data = ignitions,
+  #                aes(x = x, y = y),
+  #                color = "#EFFD5F",
+  #                show.legend = FALSE,
+  #                cex = 0.7) +
+  #     geom_point(data = escapes,
+  #                aes(x = x, y = y),
+  #                color = "#EC9706",
+  #                show.legend = FALSE,
+  #                cex = 0.7) +
+  #     theme_minimal() +
+  #     scale_fill_manual(name = "fire status",
+  #                       values = c("burnable" = "#028A0F", #green = burnable
+  #                                  "burned" = "#D0312D",  #red = burned
+  #                                  "escaped" = "#EC9706", #orange = escaped
+  #                                  "ignited" = "#EFFD5F", #yellow = #ignited
+  #                                  "unburnable" = "#C5C6D0"), #grey = unburnable
+  #                       drop = FALSE)
+  #   #there is a warning about geom_tile, but it can't be used with geom_point
+  #   ggsave(plot = g, filename = paste0('firePlotGG', time(sim), ".png"),
+  #          device = "png", path = file.path(outputPath(sim), "figures"))
+  #
+  #   mod$ignitions <- NULL
+  #   mod$escapes <- NULL
+  # }
 
   invisible(sim)
 }
