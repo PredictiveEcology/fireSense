@@ -105,9 +105,11 @@ doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE) {
 }
 
 burn <- function(sim) {
+
   moduleName <- current(sim)$moduleName
 
-  escaped <- sum(sim$ignitionAndEscapes$escaped)
+  escaped <- sum(sim$ignitionAndEscapes$escapes)
+
   #this will be a new object, containing ignitions and optionally escapes
 
   #this test will need to be different
@@ -115,13 +117,14 @@ burn <- function(sim) {
     if ("fireSense_SpreadPredict" %in% P(sim)$whichModulesToPrepare) {
       ## Spread
       # Note: if none of the cells are active SpaDES.tools::spread2() returns spreadState unchanged
-      successfulEscapes <- sim$ignitionAndEscapes[escaped == 1]$pixelID
+      successfulEscapes <- sim$ignitionAndEscapes[escaped > 0]$pixelID
+      igLocs <- rep(successfulEscapes$pixelID, times = successfulEscapes$escaped)
 
       mod$spreadState <- SpaDES.tools::spread2(
         landscape = sim$fireSense_SpreadPredicted,
         spreadProb = sim$fireSense_SpreadPredicted,
         directions = 8L,
-        start = successfulEscapes,
+        start = igLocs,
         asRaster = FALSE)
 
       mod$spreadState[ , fire_id := .GRP, by = "initialPixels"] # Add an fire_id column
