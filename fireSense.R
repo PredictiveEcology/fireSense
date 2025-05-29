@@ -11,7 +11,7 @@ defineModule(sim, list(
     person(c("Alex", "M."), "Chubaty", email = "achubaty@for-cast.ca", role = "ctb")
   ),
   childModules = character(),
-  version = numeric_version("1.0.0"),
+  version = numeric_version("2.0.0"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list("citation.bib"),
@@ -107,12 +107,11 @@ doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE) {
 burn <- function(sim) {
   moduleName <- current(sim)$moduleName
 
-
   escaped <- sum(sim$ignitionAndEscapes$escaped)
   #this will be a new object, containing ignitions and optionally escapes
 
   #this test will need to be different
-  if (length(escaped) > 0L) {
+  if (escaped > 0L) {
     if ("fireSense_SpreadPredict" %in% P(sim)$whichModulesToPrepare) {
       ## Spread
       # Note: if none of the cells are active SpaDES.tools::spread2() returns spreadState unchanged
