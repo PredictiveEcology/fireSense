@@ -42,7 +42,7 @@ defineModule(sim, list(
   inputObjects = rbind(
     expectsInput("fireSense_SpreadPredicted", "SpatRaster",
                  "A SpatRaster of spread probabilities."),
-    expectsInput("ignitionAndEscapes", "data.table",
+    expectsInput("ignitionsAndEscapes", "data.table",
                  "A data.table containing `pixelID` and `escaped`, where 1/0 denotes success/failure")
   ),
   outputObjects = rbind(
@@ -108,7 +108,7 @@ burn <- function(sim) {
 
   moduleName <- current(sim)$moduleName
 
-  escaped <- sum(sim$ignitionAndEscapes$escapes)
+  escaped <- sum(sim$ignitionsAndEscapes$escapes, na.rm = TRUE)
 
   #this will be a new object, containing ignitions and optionally escapes
 
@@ -117,8 +117,8 @@ burn <- function(sim) {
     if ("fireSense_SpreadPredict" %in% P(sim)$whichModulesToPrepare) {
       ## Spread
       # Note: if none of the cells are active SpaDES.tools::spread2() returns spreadState unchanged
-      successfulEscapes <- sim$ignitionAndEscapes[escaped > 0]$pixelID
-      igLocs <- rep(successfulEscapes$pixelID, times = successfulEscapes$escaped)
+      successfulEscapes <- sim$ignitionsAndEscapes[escapes > 0]
+      igLocs <- rep(successfulEscapes$pixelID, times = successfulEscapes$escapes)
 
       mod$spreadState <- SpaDES.tools::spread2(
         landscape = sim$fireSense_SpreadPredicted,
@@ -164,10 +164,10 @@ plot <- function(sim) {
     flam[flam$value == 1,]$value <- "burnable"
 
     escapes <- raster::xyFromCell(sim$flammableRTM,
-                                  cell = sim$ignitionAndEscapes[escaped == 1,]$pixelID) %>%
+                                  cell = sim$ignitionsAndEscapes[escaped == 1,]$pixelID) %>%
       as.data.table(.)
     ignitions <- raster::xyFromCell(sim$flammableRTM,
-                                    cell = sim$ignitionAndEscapes$pixelID) %>%
+                                    cell = sim$ignitionsAndEscapes$pixelID) %>%
       as.data.table(.)
 
     #TODO this all needs review
