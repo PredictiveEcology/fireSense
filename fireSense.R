@@ -120,25 +120,25 @@ burn <- function(sim) {
       successfulEscapes <- sim$ignitionsAndEscapes[escapes > 0]
       igLocs <- rep(successfulEscapes$pixelID, times = successfulEscapes$escapes)
 
-      mod$spreadState <- SpaDES.tools::spread2(
+      spreadState <- SpaDES.tools::spread2(
         landscape = sim$fireSense_SpreadPredicted,
         spreadProb = sim$fireSense_SpreadPredicted,
         directions = 8L,
         start = igLocs,
         asRaster = FALSE)
 
-      mod$spreadState[ , fire_id := .GRP, by = "initialPixels"] # Add an fire_id column
+      spreadState[ , fire_id := .GRP, by = "initialPixels"] # Add an fire_id column
 
       sim$rstAnnualBurnID <- rast(sim$fireSense_SpreadPredicted)
       sim$rstCurrentBurn <- rast(sim$fireSense_SpreadPredicted)
 
-      sim$rstAnnualBurnID[mod$spreadState$pixels] <- mod$spreadState$fire_id
-      sim$rstCurrentBurn[mod$spreadState$pixels] <- 1
-      sim$burnMap[mod$spreadState$pixels] <- sim$burnMap[mod$spreadState$pixels] + 1
+      sim$rstAnnualBurnID[spreadState$pixels] <- spreadState$fire_id
+      sim$rstCurrentBurn[spreadState$pixels] <- 1
+      sim$burnMap[spreadState$pixels] <- sim$burnMap[spreadState$pixels] + 1
 
       #get fire year, pixels burned, area burned, poly ID of all burned pixels
       # Make burnSummary --> similar to SCFM
-      sim$burnDT <- mod$spreadState
+      sim$burnDT <- spreadState
 
       tempDT <- sim$burnDT[, .(.N), by = "initialPixels"]
       tempDT$year <- time(sim)
