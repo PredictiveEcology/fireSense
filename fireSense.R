@@ -22,8 +22,8 @@ defineModule(sim, list(
                     desc = "Should outputs be plotted?"),
     defineParameter("plotIgnitions", "logical", FALSE, NA, NA,
                     "whether to plot ignitions, escapes, and burns"),
-    defineParameter(".plotInitialTime", "numeric", NA, NA, NA,
-                    "optional. When to start plotting."),
+    # defineParameter(".plotInitialTime", "numeric", NA, NA, NA,
+    #                 "optional. When to start plotting."),
     defineParameter(".plotInterval", "numeric", NA, NA, NA,
                     "optional. Interval between plot events."),
     defineParameter(".runInitialTime", "numeric", start(sim), NA, NA,
@@ -137,7 +137,12 @@ burn <- function(sim) {
       sim$rstAnnualBurnID[spreadState$pixels] <- spreadState$fire_id
       sim$rstCurrentBurn[spreadState$pixels] <- 1
       sim$burnMap[spreadState$pixels] <- sim$burnMap[spreadState$pixels] + 1
-      Plots(sim$rstAnnualBurnID, types = Par$.plots, filename = paste0("rstAnnualBurnID_yr", time(sim)))
+
+      Plots(c(sim$rstAnnualBurnID |> setNames(paste0("Annual Fire IDs ", time(sim))),
+              sim$burnMap |> setNames(paste0("Cumulative Burn Map ", time(sim)))),
+            types = Par$.plots, filename = paste0("Annual Fire Maps ", time(sim)),
+            deviceArgs = list(width = 10, height = 8, units = "in", res = 144))
+
 
       #get fire year, pixels burned, area burned, poly ID of all burned pixels
       # Make burnSummary --> similar to SCFM
