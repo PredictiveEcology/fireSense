@@ -44,6 +44,8 @@ defineModule(sim, list(
   inputObjects = rbind(
     expectsInput("fireSense_SpreadPredicted", "SpatRaster",
                  "A SpatRaster of spread probabilities."),
+    expectsInput("flammableRTMs", "list", 
+                 "List of (2) binary SpatRaster of flammable landcover for years given by the list names"),
     expectsInput("ignitionsAndEscapes", "data.table",
                  "A data.table containing `pixelID` and `escaped`, where 1/0 denotes success/failure")
   ),
@@ -55,9 +57,9 @@ defineModule(sim, list(
     createsOutput("burnSummary", "data.table",
                   "Describes details of all burned pixels."),
     createsOutput("rstAnnualBurnID", "SpatRaster",
-                  "annual raster whose values distinguish individual fires"),
-    createsOutput("rstCurrentBurn", "SpatRaster",
-                  "A binary raster with 1 values representing burned pixels.")
+                  "annual raster whose values distinguish individual fires")#,
+    # createsOutput("rstCurrentBurn", "SpatRaster",
+    #               "A binary raster with 1 values representing burned pixels.")
   )
 ))
 
@@ -83,23 +85,25 @@ doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE) {
       rm(burnVals)
       gc()
 
-      sim <- scheduleEvent(sim, eventTime = P(sim)$.runInitialTime, moduleName, "burn", eventPriority = 5.13)
+      sim <- scheduleEvent(sim, eventTime = P(sim)$.runInitialTime, moduleName, "burn", 
+                           eventPriority = 5.13)
 
-      if (!is.na(P(sim)$.plotInitialTime))
-        sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, moduleName, "plot", eventPriority = .last())
+      # if (!is.na(P(sim)$.plotInitialTime))
+      #   sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, moduleName, "plot", eventPriority = .last())
     },
     burn = {
       sim <- burn(sim)
 
       if (!is.na(P(sim)$.runInterval))
-        sim <- scheduleEvent(sim, time(sim) + P(sim)$.runInterval, moduleName, "burn", eventPriority = 5.13)
+        sim <- scheduleEvent(sim, time(sim) + P(sim)$.runInterval, moduleName, "burn", 
+                             eventPriority = 5.13)
     },
-    plot = {
-      sim <- plot(sim)
-
-      if (!is.na(P(sim)$.plotInterval))
-        sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, moduleName, "plot", eventPriority = .last())
-    },
+    # plot = {
+    #   sim <- plot(sim)
+    # 
+    #   if (!is.na(P(sim)$.plotInterval))
+    #     sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, moduleName, "plot", eventPriority = .last())
+    # },
     warning(paste("Undefined event type: '", current(sim)[1, "eventType", with = FALSE],
                   "' in module '", current(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
   )
@@ -128,22 +132,22 @@ burn <- function(sim) {
         directions = 8L,
         start = igLocs,
         asRaster = FALSE)
-
       spreadState[ , fire_id := .GRP, by = "initialPixels"] # Add an fire_id column
-
       sim$rstAnnualBurnID <- rast(sim$fireSense_SpreadPredicted)
-      sim$rstCurrentBurn <- rast(sim$fireSense_SpreadPredicted)
-
+      # sim$rstCurrentBurn <- rast(sim$fireSense_SpreadPredicted)
       sim$rstAnnualBurnID[spreadState$pixels] <- spreadState$fire_id
-      sim$rstCurrentBurn[spreadState$pixels] <- 1
+      # sim$rstCurrentBurn[spreadState$pixels] <- 1
       sim$burnMap[spreadState$pixels] <- sim$burnMap[spreadState$pixels] + 1
-
-      Plots(c(sim$rstAnnualBurnID |> setNames(paste0("Annual Fire IDs ", time(sim))),
-              sim$burnMap |> setNames(paste0("Cumulative Burn Map ", time(sim)))),
-            types = Par$.plots, filename = paste0("Annual Fire Maps ", time(sim)),
-            deviceArgs = list(width = 10, height = 8, units = "in", res = 144))
-
-
+      par("pin" = pmax(par()$pin, 0)) # not sure why par$pin is negative
+      # on.exit(par(opar), add = TRUE)
+      if ( is.na(P(sim)$.plotInterval) || (time(sim) - start(sim) ) %% P(sim)$.plotInterval < 1) {
+        Plots(c(sim$rstAnnualBurnID |> setNames(paste0("Annual Fire IDs ", time(sim))),
+                sim$burnMap |> setNames(paste0("Cumulative Burn Map ", time(sim))),
+                sim$fireSense_SpreadPredicted |> setNames(paste0("Spread Probability Map ", time(sim)))),
+              types = Par$.plots, filename = paste0("Annual Fire Maps ", time(sim)),
+              deviceArgs = list(width = 10, height = 8, units = "in", res = 144))
+      }
+      
       #get fire year, pixels burned, area burned, poly ID of all burned pixels
       # Make burnSummary --> similar to SCFM
       sim$burnDT <- spreadState
