@@ -126,6 +126,7 @@ burn <- function(sim) {
       successfulEscapes <- sim$ignitionsAndEscapes[escapes > 0]
       igLocs <- rep(successfulEscapes$pixelID, times = successfulEscapes$escapes)
 
+      if (any(table(igLocs) > 1)) browser() # spread2 will fail with duplicates; what to do?
       spreadState <- SpaDES.tools::spread2(
         landscape = sim$fireSense_SpreadPredicted,
         spreadProb = sim$fireSense_SpreadPredicted,
