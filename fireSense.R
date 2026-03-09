@@ -44,8 +44,8 @@ defineModule(sim, list(
   inputObjects = rbind(
     expectsInput("fireSense_SpreadPredicted", "SpatRaster",
                  "A SpatRaster of spread probabilities."),
-    expectsInput("flammableRTMs", "list", 
-                 "List of (2) binary SpatRaster of flammable landcover for years given by the list names"),
+    expectsInput("flammableRTM", "list", 
+                 "binary SpatRaster of flammable landcover for years given by the list names"),
     expectsInput("ignitionsAndEscapes", "data.table",
                  "A data.table containing `pixelID` and `escaped`, where 1/0 denotes success/failure"),
     expectsInput("rasterToMatch", "SpatRaster", sourceURL = NA,
@@ -60,9 +60,9 @@ defineModule(sim, list(
     createsOutput("burnSummary", "data.table",
                   "Describes details of all burned pixels."),
     createsOutput("rstAnnualBurnID", "SpatRaster",
-                  "annual raster whose values distinguish individual fires")#,
-    # createsOutput("rstCurrentBurn", "SpatRaster",
-    #               "A binary raster with 1 values representing burned pixels.")
+                  "annual raster whose values distinguish individual fires"),
+    createsOutput("rstCurrentBurn", "SpatRaster",
+                  "A binary raster with 1 values representing burned pixels.")
   )
 ))
 
@@ -82,6 +82,8 @@ doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE) {
 
       ## trying to avoid the raster warning no non-missing arguments to max
       sim$burnMap <- rast(sim$rasterToMatch)
+      sim$rstCurrentBurn <- rast(sim$rasterToMatch)
+      
       burnVals <- as.vector(sim$flammableRTM)
       sim$burnMap[burnVals == 0] <- NA
       sim$burnMap[burnVals == 1] <- 0
@@ -138,9 +140,9 @@ burn <- function(sim) {
         asRaster = FALSE)
       spreadState[ , fire_id := .GRP, by = "initialPixels"] # Add an fire_id column
       sim$rstAnnualBurnID <- rast(sim$fireSense_SpreadPredicted)
-      # sim$rstCurrentBurn <- rast(sim$fireSense_SpreadPredicted)
+      sim$rstCurrentBurn <- rast(sim$fireSense_SpreadPredicted)
       sim$rstAnnualBurnID[spreadState$pixels] <- spreadState$fire_id
-      # sim$rstCurrentBurn[spreadState$pixels] <- 1
+      sim$rstCurrentBurn[spreadState$pixels] <- 1
       sim$burnMap[spreadState$pixels] <- sim$burnMap[spreadState$pixels] + 1
       par("pin" = pmax(par()$pin, 0)) # not sure why par$pin is negative
       # on.exit(par(opar), add = TRUE)
