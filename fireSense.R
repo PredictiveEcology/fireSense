@@ -11,7 +11,7 @@ defineModule(sim, list(
     person(c("Alex", "M."), "Chubaty", email = "achubaty@for-cast.ca", role = "ctb")
   ),
   childModules = character(),
-  version = numeric_version("2.0.0"),
+  version = numeric_version("2.0.1"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list("citation.bib"),
@@ -47,7 +47,10 @@ defineModule(sim, list(
     expectsInput("flammableRTMs", "list", 
                  "List of (2) binary SpatRaster of flammable landcover for years given by the list names"),
     expectsInput("ignitionsAndEscapes", "data.table",
-                 "A data.table containing `pixelID` and `escaped`, where 1/0 denotes success/failure")
+                 "A data.table containing `pixelID` and `escaped`, where 1/0 denotes success/failure"),
+    expectsInput("rasterToMatch", "SpatRaster", sourceURL = NA,
+                 "template raster for study area. Assumes some buffering of core area to limit edge effect of fire.")
+   
   ),
   outputObjects = rbind(
     createsOutput("burnDT", "data.table",
