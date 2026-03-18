@@ -11,7 +11,7 @@ defineModule(sim, list(
     person(c("Alex", "M."), "Chubaty", email = "achubaty@for-cast.ca", role = "ctb")
   ),
   childModules = character(),
-  version = numeric_version("2.0.1"),
+  version = numeric_version("2.0.2"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list("citation.bib"),
@@ -130,14 +130,25 @@ burn <- function(sim) {
       # Note: if none of the cells are active SpaDES.tools::spread2() returns spreadState unchanged
       successfulEscapes <- sim$ignitionsAndEscapes[escapes > 0]
       igLocs <- rep(successfulEscapes$pixelID, times = successfulEscapes$escapes)
-
-      if (any(table(igLocs) > 1)) browser() # spread2 will fail with duplicates; what to do?
-      spreadState <- SpaDES.tools::spread2(
-        landscape = sim$fireSense_SpreadPredicted,
-        spreadProb = sim$fireSense_SpreadPredicted,
-        directions = 8L,
-        start = igLocs,
-        asRaster = FALSE)
+      igLocsList <- list(igLocs)
+      if (any(duplicated(tail(igLocsList, 1)[[1]]))) { 
+      # if (any(table(igLocs) > 1)) {
+        len <- length(igLocsList)
+        igLocsList[[len + 1]] <- 
+          igLocsList[[len]][duplicated(igLocsList[[len]])]
+        igLocsList[[len]] <- unique(igLocsList[[len]])
+      } # browser() # spread2 will fail with duplicates; what to do?
+      
+      spreadStates <- Map(igLocs = igLocsList, function(igLocs) {
+        spreadState <- SpaDES.tools::spread2(
+          landscape = sim$fireSense_SpreadPredicted,
+          spreadProb = sim$fireSense_SpreadPredicted,
+          directions = 8L,
+          start = igLocs,
+          asRaster = FALSE)  
+      })
+      
+      spreadState <- rbindlist(spreadStates) |> unique()
       spreadState[ , fire_id := .GRP, by = "initialPixels"] # Add an fire_id column
       sim$rstAnnualBurnID <- rast(sim$fireSense_SpreadPredicted)
       sim$rstCurrentBurn <- rast(sim$fireSense_SpreadPredicted)
