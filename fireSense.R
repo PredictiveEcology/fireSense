@@ -24,8 +24,8 @@ defineModule(sim, list(
                     "whether to plot ignitions, escapes, and burns"),
     # defineParameter(".plotInitialTime", "numeric", NA, NA, NA,
     #                 "optional. When to start plotting."),
-    defineParameter(".plotInterval", "numeric", NA, NA, NA,
-                    "optional. Interval between plot events."),
+    defineParameter(".plotInterval", "numeric", 10, NA, NA,
+                    "Interval between plot events."),
     defineParameter(".runInitialTime", "numeric", start(sim), NA, NA,
                     "time to simulate initial fire"),
     defineParameter(".runInterval", "numeric", 1, NA, NA,
@@ -157,7 +157,7 @@ burn <- function(sim) {
       sim$burnMap[spreadState$pixels] <- sim$burnMap[spreadState$pixels] + 1
       par("pin" = pmax(par()$pin, 0)) # not sure why par$pin is negative
       # on.exit(par(opar), add = TRUE)
-      if ( is.na(P(sim)$.plotInterval) || (time(sim) - start(sim) ) %% P(sim)$.plotInterval < 1) {
+      if ((time(sim) - start(sim) ) %% P(sim)$.plotInterval < 1) {
         Plots(c(sim$rstAnnualBurnID |> setNames(paste0("Annual Fire IDs ", time(sim))),
                 sim$burnMap |> setNames(paste0("Cumulative Burn Map ", time(sim))),
                 sim$fireSense_SpreadPredicted |> setNames(paste0("Spread Probability Map ", time(sim)))),
