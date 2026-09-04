@@ -7,7 +7,8 @@ defineModule(sim, list(
   keywords = c("fire", "percolation", "environmental control", "feedback",
                "weather", "vegetation", "land-cover"),
   authors = c(
-    person("Jean", "Marchal", email = "jean.d.marchal@gmail.com", role = c("aut", "cre")),
+    person("Eliot", "McIntire", email = "eliot.mcintire@nrcan-rncan.gc.ca", role = c("aut", "cre")),
+    person("Jean", "Marchal", email = "jean.d.marchal@gmail.com", role = "aut"),
     person(c("Alex", "M."), "Chubaty", email = "achubaty@for-cast.ca", role = "ctb")
   ),
   childModules = character(),
