@@ -2973,7 +2973,7 @@ border-radius: 0px;
 
 <h1 class="title toc-ignore">fireSense Manual</h1>
 <h3 class="subtitle">v.0.0.0.9000</h3>
-<h4 class="date">Last updated: 2026-09-11</h4>
+<h4 class="date">Last updated: 2026-09-21</h4>
 
 </div>
 
@@ -2991,13 +2991,12 @@ border-radius: 0px;
 </div>
 <div id="module-overview" class="section level2">
 <h2>Module Overview</h2>
-<!-- TODO -->
 <p>A landscape fire model sensitive to environmental changes (e.g., weather and land cover) <span class="citation">[@Marchal:2017a; @Marchal:2017b; @Marchal:2019]</span>.</p>
 <div id="module-summary" class="section level3">
 <h3>Module summary</h3>
-<p>Provide a brief summary of what the module does / how to use the module.</p>
-<p>Module documentation should be written so that others can use your module.
-This is a template for module documentation, and should be changed to reflect your module.</p>
+<p>Each year, <code>fireSense</code> spreads fires from the pixels where fires escaped, using <code>SpaDES.tools::spread2()</code> with the per-pixel spread probabilities in <code>fireSense_SpreadPredicted</code>.
+Ignitions and escapes are not simulated here: they come from <code>fireSense_IgnitionPredict</code> as <code>ignitionsAndEscapes</code>.
+The module records the pixels burned that year, a cumulative burn map, and a per-fire summary of area burned.</p>
 </div>
 <div id="module-inputs-and-parameters" class="section level3">
 <h3>Module inputs and parameters</h3>
@@ -3031,7 +3030,7 @@ fireSense_SpreadPredicted
 SpatRaster
 </td>
 <td style="text-align:left;">
-A SpatRaster of spread probabilities.
+Per-pixel spread probability for the current year.
 </td>
 <td style="text-align:left;">
 NA
@@ -3042,10 +3041,10 @@ NA
 flammableRTM
 </td>
 <td style="text-align:left;">
-list
+SpatRaster
 </td>
 <td style="text-align:left;">
-binary SpatRaster of flammable landcover for years given by the list names
+Binary SpatRaster (1 = flammable, 0 = not). Non-flammable pixels are <code>NA</code> in <code>burnMap</code>.
 </td>
 <td style="text-align:left;">
 NA
@@ -3059,7 +3058,7 @@ ignitionsAndEscapes
 data.table
 </td>
 <td style="text-align:left;">
-A data.table containing <code>pixelID</code> and <code>escaped</code>, where 1/0 denotes success/failure
+One row per ignited pixel, with <code>pixelID</code> and <code>escapes</code>, the number of escaped fires there.
 </td>
 <td style="text-align:left;">
 NA
@@ -3073,7 +3072,7 @@ rasterToMatch
 SpatRaster
 </td>
 <td style="text-align:left;">
-template raster for study area. Assumes some buffering of core area to limit edge effect of fire.
+Template raster for the study area, ideally buffered to limit fire edge effects.
 </td>
 <td style="text-align:left;">
 NA
@@ -3125,27 +3124,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-Should outputs be plotted?
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-plotIgnitions
-</td>
-<td style="text-align:left;">
-logical
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-whether to plot ignitions, escapes, and burns
+Passed to <code>types</code> in <code>Plots()</code>, e.g. “screen”, “png”. <code>NULL</code> or <code>NA</code> for no plots.
 </td>
 </tr>
 <tr>
@@ -3165,7 +3144,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-Interval between plot events.
+Years between plots of annual fire IDs, cumulative burns and spread probability.
 </td>
 </tr>
 <tr>
@@ -3185,7 +3164,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-time to simulate initial fire
+Time of the first <code>burn</code> event.
 </td>
 </tr>
 <tr>
@@ -3205,47 +3184,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-optional. Interval between two runs of this module, expressed in units of simulation time. By default, 1 year.
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-.saveInitialTime
-</td>
-<td style="text-align:left;">
-numeric
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-optional. When to start saving output to a file.
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-.saveInterval
-</td>
-<td style="text-align:left;">
-numeric
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-optional. Interval between save events.
+Years between <code>burn</code> events. <code>NA</code> burns once only.
 </td>
 </tr>
 <tr>
@@ -3265,7 +3204,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-Which fireSense predict modules to prep? Defaults to all 3. Must include <code>fireSense_IgnitionPredict</code>.
+Fires spread only if this includes <code>fireSense_SpreadPredict</code>. Other values are ignored.
 </td>
 </tr>
 </tbody>
@@ -3273,30 +3212,19 @@ Which fireSense predict modules to prep? Defaults to all 3. Must include <code>f
 </div>
 <div id="events" class="section level3">
 <h3>Events</h3>
-<!-- TODO update for latest version -->
 <ul>
-<li>ignite fires</li>
-<li>determine which fires escape</li>
-<li>spread escaped fires</li>
-<li>save</li>
-<li>plot</li>
+<li><code>init</code>: creates <code>burnMap</code> (0 where flammable, <code>NA</code> elsewhere) and schedules the first <code>burn</code> at <code>.runInitialTime</code>.</li>
+<li><code>burn</code>: spreads fires from every pixel with <code>escapes &gt; 0</code>, updates the outputs, and reschedules itself every <code>.runInterval</code> years.
+Nothing burns in a year with no escapes, or if <code>whichModulesToPrepare</code> does not include <code>fireSense_SpreadPredict</code>.</li>
 </ul>
 </div>
 <div id="plotting" class="section level3">
 <h3>Plotting</h3>
-<!-- TODO update for latest version -->
-<ul>
-<li><strong>Burn map</strong>: Pixels burned this timestep.</li>
-<li><strong>Cumulative burn map</strong>: Number of times each pixel burned during the simulation..</li>
-</ul>
+<p>Every <code>.plotInterval</code> years the <code>burn</code> event plots annual fire IDs, the cumulative burn map and the spread probability map, to the devices named in <code>.plots</code>.</p>
 </div>
 <div id="saving" class="section level3">
 <h3>Saving</h3>
-<!-- TODO update for latest version -->
-<ul>
-<li><code>burnMap</code>: A <code>RasterLayer</code> describing how which pixels burned this timestep.</li>
-<li><code>burnMapCumul</code>: A <code>RasterLayer</code> describing how many times each pixel burned over the course of the simulation.</li>
-</ul>
+<p>The module saves nothing itself; use the <code>outputs</code> argument of <code>simInit()</code>.</p>
 </div>
 <div id="module-outputs" class="section level3">
 <h3>Module outputs</h3>
@@ -3327,7 +3255,7 @@ burnDT
 data.table
 </td>
 <td style="text-align:left;">
-Data table with pixel IDs of most recent burn.
+<code>spread2()</code> output for the most recent fire year: one row per burned pixel, plus <code>fire_id</code>.
 </td>
 </tr>
 <tr>
@@ -3338,7 +3266,7 @@ burnMap
 SpatRaster
 </td>
 <td style="text-align:left;">
-A raster of cumulative burns
+Number of times each pixel has burned. <code>NA</code> where not flammable.
 </td>
 </tr>
 <tr>
@@ -3349,7 +3277,7 @@ burnSummary
 data.table
 </td>
 <td style="text-align:left;">
-Describes details of all burned pixels.
+One row per fire: <code>igLoc</code> (ignition pixel), <code>N</code> (pixels burned), <code>year</code>, <code>areaBurnedHa</code>.
 </td>
 </tr>
 <tr>
@@ -3360,7 +3288,7 @@ rstAnnualBurnID
 SpatRaster
 </td>
 <td style="text-align:left;">
-annual raster whose values distinguish individual fires
+Fire ID of each pixel burned this year; <code>NA</code> elsewhere.
 </td>
 </tr>
 <tr>
@@ -3371,7 +3299,7 @@ rstCurrentBurn
 SpatRaster
 </td>
 <td style="text-align:left;">
-A binary raster with 1 values representing burned pixels.
+1 where burned this year; <code>NA</code> elsewhere.
 </td>
 </tr>
 </tbody>
@@ -3379,55 +3307,26 @@ A binary raster with 1 values representing burned pixels.
 </div>
 <div id="usage" class="section level3">
 <h3>Usage</h3>
-<!-- TODO: update for latest version; use terra -->
-<pre class="r"><code>Require(c(&quot;SpaDES.core&quot;, &quot;SpaDES.tools&quot;))
+<p><code>fireSense</code> needs the objects made by the predict modules, so run it with them:</p>
+<pre class="r"><code>library(SpaDES.core)
 
-set.seed(1)
+modules &lt;- list(&quot;fireSense_dataPrepPredict&quot;, &quot;fireSense_IgnitionPredict&quot;,
+                &quot;fireSense_SpreadPredict&quot;, &quot;fireSense&quot;)
 
-nx &lt;- ny &lt;- 100L
-n &lt;- nx * ny
-r &lt;- raster(nrows = ny, ncols = nx, xmn = -nx/2, xmx = nx/2, ymn = -ny/2, ymx = ny/2)
-
-# Create a map ignition probabilities
-ignitionProbRaster &lt;- gaussMap(r, scale = 10, var = .0001, speedup = nx/5e2, inMemory = TRUE)
-
-# Create a map of escape probabilities
-escapeProbRaster &lt;- gaussMap(r, scale = 50, var = .01, speedup = nx/5e2, inMemory = TRUE)
-
-# Create a map of spread probabilities
-spreadProbRaster &lt;- gaussMap(r, scale = 300, var = .05, speedup = nx/5e2, inMemory = TRUE)
-
-#outputDir &lt;- file.path(tempdir(), &quot;outputs&quot;)
-times &lt;- list(start = 1, end = 100, timeunit = &quot;year&quot;)
-
-modules &lt;- list(&quot;fireSense&quot;)
-
-# Pass objects found in the global environment to the simList environment
-objects &lt;- list(
-  ignitionProbRaster = ignitionProbRaster,
-  escapeProbRaster = escapeProbRaster,
-  spreadProbRaster = spreadProbRaster
-)
-
-# paths &lt;- list(
-#   # cachePath = file.path(outputDir, &quot;cache&quot;),
-#   modulePath = &quot;..&quot;
-#   # inputPath = inputDir,
-#   # outputPath = outputDir
-# )
-
-paths &lt;- list(
-  modulePath = &quot;..&quot;
-)
-
-mySim &lt;- simInit(times = times, params = parameters, modules = modules, objects = objects, paths = paths)
-
+mySim &lt;- simInit(times = list(start = 2011, end = 2100),
+                 params = list(fireSense = list(.plots = &quot;png&quot;, .plotInterval = 10)),
+                 modules = modules,
+                 objects = objects, ## fitted fireSense models, rasterToMatch, flammableRTM, etc.
+                 paths = list(modulePath = &quot;..&quot;))
 spades(mySim)</code></pre>
 </div>
 <div id="links-to-other-modules" class="section level3">
 <h3>Links to other modules</h3>
-<!-- TODO: describe links with the other fireSense modules -->
-<p>This module should be coupled with a dynamic vegetation model.</p>
+<ul>
+<li><code>fireSense_IgnitionPredict</code> supplies <code>ignitionsAndEscapes</code>.</li>
+<li><code>fireSense_SpreadPredict</code> supplies <code>fireSense_SpreadPredicted</code>.</li>
+<li>Vegetation modules (e.g. <code>Biomass_regeneration</code>) use <code>rstCurrentBurn</code>.</li>
+</ul>
 </div>
 <div id="getting-help" class="section level3">
 <h3>Getting help</h3>
