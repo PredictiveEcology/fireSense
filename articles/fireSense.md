@@ -1,7 +1,7 @@
 ---
 title: "fireSense Manual"
 subtitle: "v.0.0.0.9000"
-date: "Last updated: 2026-09-14"
+date: "Last updated: 2026-09-21"
 output:
   bookdown::html_document2:
     toc: true
@@ -37,15 +37,13 @@ Eliot McIntire <eliot.mcintire@nrcan-rncan.gc.ca> [aut, cre], Jean Marchal <jean
 
 ## Module Overview
 
-<!-- TODO -->
 A landscape fire model sensitive to environmental changes (e.g., weather and land cover) [@Marchal:2017a; @Marchal:2017b; @Marchal:2019].
 
 ### Module summary
 
-Provide a brief summary of what the module does / how to use the module.
-
-Module documentation should be written so that others can use your module.
-This is a template for module documentation, and should be changed to reflect your module.
+Each year, `fireSense` spreads fires from the pixels where fires escaped, using `SpaDES.tools::spread2()` with the per-pixel spread probabilities in `fireSense_SpreadPredicted`.
+Ignitions and escapes are not simulated here: they come from `fireSense_IgnitionPredict` as `ignitionsAndEscapes`.
+The module records the pixels burned that year, a cumulative burn map, and a per-fire summary of area burned.
 
 ### Module inputs and parameters
 
@@ -65,25 +63,25 @@ Table \@ref(tab:moduleInputs-fireSense) shows the full list of module inputs.
   <tr>
    <td style="text-align:left;"> fireSense_SpreadPredicted </td>
    <td style="text-align:left;"> SpatRaster </td>
-   <td style="text-align:left;"> A SpatRaster of spread probabilities. </td>
+   <td style="text-align:left;"> Per-pixel spread probability for the current year. </td>
    <td style="text-align:left;"> NA </td>
   </tr>
   <tr>
    <td style="text-align:left;"> flammableRTM </td>
-   <td style="text-align:left;"> list </td>
-   <td style="text-align:left;"> binary SpatRaster of flammable landcover for years given by the list names </td>
+   <td style="text-align:left;"> SpatRaster </td>
+   <td style="text-align:left;"> Binary SpatRaster (1 = flammable, 0 = not). Non-flammable pixels are `NA` in `burnMap`. </td>
    <td style="text-align:left;"> NA </td>
   </tr>
   <tr>
    <td style="text-align:left;"> ignitionsAndEscapes </td>
    <td style="text-align:left;"> data.table </td>
-   <td style="text-align:left;"> A data.table containing `pixelID` and `escaped`, where 1/0 denotes success/failure </td>
+   <td style="text-align:left;"> One row per ignited pixel, with `pixelID` and `escapes`, the number of escaped fires there. </td>
    <td style="text-align:left;"> NA </td>
   </tr>
   <tr>
    <td style="text-align:left;"> rasterToMatch </td>
    <td style="text-align:left;"> SpatRaster </td>
-   <td style="text-align:left;"> template raster for study area. Assumes some buffering of core area to limit edge effect of fire. </td>
+   <td style="text-align:left;"> Template raster for the study area, ideally buffered to limit fire edge effects. </td>
    <td style="text-align:left;"> NA </td>
   </tr>
 </tbody>
@@ -111,15 +109,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense))
    <td style="text-align:left;">  </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Should outputs be plotted? </td>
-  </tr>
-  <tr>
-   <td style="text-align:left;"> plotIgnitions </td>
-   <td style="text-align:left;"> logical </td>
-   <td style="text-align:left;"> FALSE </td>
-   <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> whether to plot ignitions, escapes, and burns </td>
+   <td style="text-align:left;"> Passed to `types` in `Plots()`, e.g. "screen", "png". `NULL` or `NA` for no plots. </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .plotInterval </td>
@@ -127,7 +117,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense))
    <td style="text-align:left;"> 10 </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Interval between plot events. </td>
+   <td style="text-align:left;"> Years between plots of annual fire IDs, cumulative burns and spread probability. </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .runInitialTime </td>
@@ -135,7 +125,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense))
    <td style="text-align:left;"> 0 </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> time to simulate initial fire </td>
+   <td style="text-align:left;"> Time of the first `burn` event. </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .runInterval </td>
@@ -143,23 +133,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense))
    <td style="text-align:left;"> 1 </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> optional. Interval between two runs of this module, expressed in units of simulation time. By default, 1 year. </td>
-  </tr>
-  <tr>
-   <td style="text-align:left;"> .saveInitialTime </td>
-   <td style="text-align:left;"> numeric </td>
-   <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> optional. When to start saving output to a file. </td>
-  </tr>
-  <tr>
-   <td style="text-align:left;"> .saveInterval </td>
-   <td style="text-align:left;"> numeric </td>
-   <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> optional. Interval between save events. </td>
+   <td style="text-align:left;"> Years between `burn` events. `NA` burns once only. </td>
   </tr>
   <tr>
    <td style="text-align:left;"> whichModulesToPrepare </td>
@@ -167,31 +141,24 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense))
    <td style="text-align:left;"> fireSens.... </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Which fireSense predict modules to prep? Defaults to all 3. Must include `fireSense_IgnitionPredict`. </td>
+   <td style="text-align:left;"> Fires spread only if this includes `fireSense_SpreadPredict`. Other values are ignored. </td>
   </tr>
 </tbody>
 </table>
 
 ### Events
 
-<!-- TODO update for latest version -->
-- ignite fires
-- determine which fires escape
-- spread escaped fires
-- save
-- plot
+- `init`: creates `burnMap` (0 where flammable, `NA` elsewhere) and schedules the first `burn` at `.runInitialTime`.
+- `burn`: spreads fires from every pixel with `escapes > 0`, updates the outputs, and reschedules itself every `.runInterval` years.
+  Nothing burns in a year with no escapes, or if `whichModulesToPrepare` does not include `fireSense_SpreadPredict`.
 
 ### Plotting
 
-<!-- TODO update for latest version -->
-- **Burn map**: Pixels burned this timestep.
-- **Cumulative burn map**: Number of times each pixel burned during the simulation..
+Every `.plotInterval` years the `burn` event plots annual fire IDs, the cumulative burn map and the spread probability map, to the devices named in `.plots`.
 
 ### Saving
 
-<!-- TODO update for latest version -->
-- `burnMap`: A `RasterLayer` describing how which pixels burned this timestep.
-- `burnMapCumul`: A `RasterLayer` describing how many times each pixel burned over the course of the simulation.
+The module saves nothing itself; use the `outputs` argument of `simInit()`.
 
 ### Module outputs
 
@@ -210,86 +177,55 @@ Description of the module outputs (Table \@ref(tab:moduleOutputs-fireSense)).
   <tr>
    <td style="text-align:left;"> burnDT </td>
    <td style="text-align:left;"> data.table </td>
-   <td style="text-align:left;"> Data table with pixel IDs of most recent burn. </td>
+   <td style="text-align:left;"> `spread2()` output for the most recent fire year: one row per burned pixel, plus `fire_id`. </td>
   </tr>
   <tr>
    <td style="text-align:left;"> burnMap </td>
    <td style="text-align:left;"> SpatRaster </td>
-   <td style="text-align:left;"> A raster of cumulative burns </td>
+   <td style="text-align:left;"> Number of times each pixel has burned. `NA` where not flammable. </td>
   </tr>
   <tr>
    <td style="text-align:left;"> burnSummary </td>
    <td style="text-align:left;"> data.table </td>
-   <td style="text-align:left;"> Describes details of all burned pixels. </td>
+   <td style="text-align:left;"> One row per fire: `igLoc` (ignition pixel), `N` (pixels burned), `year`, `areaBurnedHa`. </td>
   </tr>
   <tr>
    <td style="text-align:left;"> rstAnnualBurnID </td>
    <td style="text-align:left;"> SpatRaster </td>
-   <td style="text-align:left;"> annual raster whose values distinguish individual fires </td>
+   <td style="text-align:left;"> Fire ID of each pixel burned this year; `NA` elsewhere. </td>
   </tr>
   <tr>
    <td style="text-align:left;"> rstCurrentBurn </td>
    <td style="text-align:left;"> SpatRaster </td>
-   <td style="text-align:left;"> A binary raster with 1 values representing burned pixels. </td>
+   <td style="text-align:left;"> 1 where burned this year; `NA` elsewhere. </td>
   </tr>
 </tbody>
 </table>
 
 ### Usage
 
-<!-- TODO: update for latest version; use terra -->
+`fireSense` needs the objects made by the predict modules, so run it with them:
 
 
 ``` r
-Require(c("SpaDES.core", "SpaDES.tools"))
+library(SpaDES.core)
 
-set.seed(1)
+modules <- list("fireSense_dataPrepPredict", "fireSense_IgnitionPredict",
+                "fireSense_SpreadPredict", "fireSense")
 
-nx <- ny <- 100L
-n <- nx * ny
-r <- raster(nrows = ny, ncols = nx, xmn = -nx/2, xmx = nx/2, ymn = -ny/2, ymx = ny/2)
-
-# Create a map ignition probabilities
-ignitionProbRaster <- gaussMap(r, scale = 10, var = .0001, speedup = nx/5e2, inMemory = TRUE)
-
-# Create a map of escape probabilities
-escapeProbRaster <- gaussMap(r, scale = 50, var = .01, speedup = nx/5e2, inMemory = TRUE)
-
-# Create a map of spread probabilities
-spreadProbRaster <- gaussMap(r, scale = 300, var = .05, speedup = nx/5e2, inMemory = TRUE)
-
-#outputDir <- file.path(tempdir(), "outputs")
-times <- list(start = 1, end = 100, timeunit = "year")
-
-modules <- list("fireSense")
-
-# Pass objects found in the global environment to the simList environment
-objects <- list(
-  ignitionProbRaster = ignitionProbRaster,
-  escapeProbRaster = escapeProbRaster,
-  spreadProbRaster = spreadProbRaster
-)
-
-# paths <- list(
-#   # cachePath = file.path(outputDir, "cache"),
-#   modulePath = "../.."
-#   # inputPath = inputDir,
-#   # outputPath = outputDir
-# )
-
-paths <- list(
-  modulePath = "../.."
-)
-
-mySim <- simInit(times = times, params = parameters, modules = modules, objects = objects, paths = paths)
-
+mySim <- simInit(times = list(start = 2011, end = 2100),
+                 params = list(fireSense = list(.plots = "png", .plotInterval = 10)),
+                 modules = modules,
+                 objects = objects, ## fitted fireSense models, rasterToMatch, flammableRTM, etc.
+                 paths = list(modulePath = "../.."))
 spades(mySim)
 ```
 
 ### Links to other modules
 
-<!-- TODO: describe links with the other fireSense modules -->
-This module should be coupled with a dynamic vegetation model.
+- `fireSense_IgnitionPredict` supplies `ignitionsAndEscapes`.
+- `fireSense_SpreadPredict` supplies `fireSense_SpreadPredicted`.
+- Vegetation modules (e.g. `Biomass_regeneration`) use `rstCurrentBurn`.
 
 ### Getting help
 
