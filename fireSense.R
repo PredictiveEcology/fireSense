@@ -21,18 +21,12 @@ defineModule(sim, list(
   parameters = rbind(
     defineParameter(".plots", "character|logical", default = NULL, ## TODO: use .plotInitialTime etc.
                     desc = "Passed to `types` in `Plots()`, e.g. \"screen\", \"png\". `NULL` or `NA` for no plots."),
-    defineParameter("plotIgnitions", "logical", FALSE, NA, NA,
-                    "Currently unused."),
     defineParameter(".plotInterval", "numeric", 10, NA, NA,
                     "Years between plots of annual fire IDs, cumulative burns and spread probability."),
     defineParameter(".runInitialTime", "numeric", start(sim), NA, NA,
                     "Time of the first `burn` event."),
     defineParameter(".runInterval", "numeric", 1, NA, NA,
                     "Years between `burn` events. `NA` burns once only."),
-    defineParameter(".saveInitialTime", "numeric", NA, NA, NA,
-                    "Currently unused."),
-    defineParameter(".saveInterval", "numeric", NA, NA, NA,
-                    "Currently unused."),
     defineParameter("whichModulesToPrepare", "character",
                     default = c("fireSense_SpreadPredict", "fireSense_IgnitionPredict", "fireSense_EscapePredict"),
                     NA, NA,
@@ -41,7 +35,7 @@ defineModule(sim, list(
   inputObjects = rbind(
     expectsInput("fireSense_SpreadPredicted", "SpatRaster",
                  "Per-pixel spread probability for the current year."),
-    expectsInput("flammableRTM", "list", 
+    expectsInput("flammableRTM", "SpatRaster", 
                  "Binary SpatRaster (1 = flammable, 0 = not). Non-flammable pixels are `NA` in `burnMap`."),
     expectsInput("ignitionsAndEscapes", "data.table",
                  "One row per ignited pixel, with `pixelID` and `escapes`, the number of escaped fires there."),
@@ -134,6 +128,8 @@ burn <- function(sim) {
       igLocs <- rep(successfulEscapes$pixelID, times = successfulEscapes$escapes)
       igLocsList <- list(igLocs)
       ## spread2 fails with duplicated start pixels, so duplicates get their own spread2 call
+      ## Only one round of this: with 3 or more escapes on one pixel the last call still has
+      ## duplicates, and spread2 stops with "start has duplicates".
       if (any(duplicated(tail(igLocsList, 1)[[1]]))) { 
         len <- length(igLocsList)
         igLocsList[[len + 1]] <- 
