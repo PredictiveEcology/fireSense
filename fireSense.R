@@ -20,56 +20,53 @@ defineModule(sim, list(
   reqdPkgs = list("data.table", "ggplot2", "ggspatial", "terra"),
   parameters = rbind(
     defineParameter(".plots", "character|logical", default = NULL, ## TODO: use .plotInitialTime etc.
-                    desc = "Should outputs be plotted?"),
-    defineParameter("plotIgnitions", "logical", FALSE, NA, NA,
-                    "whether to plot ignitions, escapes, and burns"),
-    # defineParameter(".plotInitialTime", "numeric", NA, NA, NA,
-    #                 "optional. When to start plotting."),
+                    desc = "Passed to `types` in `Plots()`, e.g. \"screen\", \"png\". `NULL` or `NA` for no plots."),
     defineParameter(".plotInterval", "numeric", 10, NA, NA,
-                    "Interval between plot events."),
+                    "Years between plots of annual fire IDs, cumulative burns and spread probability."),
     defineParameter(".runInitialTime", "numeric", start(sim), NA, NA,
-                    "time to simulate initial fire"),
+                    "Time of the first `burn` event."),
     defineParameter(".runInterval", "numeric", 1, NA, NA,
-                    paste("optional. Interval between two runs of this module,",
-                          "expressed in units of simulation time. By default, 1 year.")),
-    defineParameter(".saveInitialTime", "numeric", NA, NA, NA,
-                    "optional. When to start saving output to a file."),
-    defineParameter(".saveInterval", "numeric", NA, NA, NA,
-                    "optional. Interval between save events."),
+                    "Years between `burn` events. `NA` burns once only."),
     defineParameter("whichModulesToPrepare", "character",
                     default = c("fireSense_SpreadPredict", "fireSense_IgnitionPredict", "fireSense_EscapePredict"),
                     NA, NA,
-                    paste("Which fireSense predict modules to prep? Defaults to all 3.",
-                          "Must include `fireSense_IgnitionPredict`."))
+                    "Fires spread only if this includes `fireSense_SpreadPredict`. Other values are ignored.")
   ),
   inputObjects = rbind(
     expectsInput("fireSense_SpreadPredicted", "SpatRaster",
-                 "A SpatRaster of spread probabilities."),
-    expectsInput("flammableRTM", "list", 
-                 "binary SpatRaster of flammable landcover for years given by the list names"),
+                 "Per-pixel spread probability for the current year."),
+    expectsInput("flammableRTM", "SpatRaster", 
+                 "Binary SpatRaster (1 = flammable, 0 = not). Non-flammable pixels are `NA` in `burnMap`."),
     expectsInput("ignitionsAndEscapes", "data.table",
-                 "A data.table containing `pixelID` and `escaped`, where 1/0 denotes success/failure"),
+                 "One row per ignited pixel, with `pixelID` and `escapes`, the number of escaped fires there."),
     expectsInput("rasterToMatch", "SpatRaster", sourceURL = NA,
-                 "template raster for study area. Assumes some buffering of core area to limit edge effect of fire.")
-   
+                 "Template raster for the study area, ideally buffered to limit fire edge effects.")
   ),
   outputObjects = rbind(
     createsOutput("burnDT", "data.table",
-                  "Data table with pixel IDs of most recent burn."),
+                  "`spread2()` output for the most recent fire year: one row per burned pixel, plus `fire_id`."),
     createsOutput("burnMap", "SpatRaster",
-                  "A raster of cumulative burns"),
+                  "Number of times each pixel has burned. `NA` where not flammable."),
     createsOutput("burnSummary", "data.table",
-                  "Describes details of all burned pixels."),
+                  "One row per fire: `igLoc` (ignition pixel), `N` (pixels burned), `year`, `areaBurnedHa`."),
     createsOutput("rstAnnualBurnID", "SpatRaster",
-                  "annual raster whose values distinguish individual fires"),
+                  "Fire ID of each pixel burned this year; `NA` elsewhere."),
     createsOutput("rstCurrentBurn", "SpatRaster",
-                  "A binary raster with 1 values representing burned pixels.")
+                  "1 where burned this year; `NA` elsewhere.")
   )
 ))
 
-## event types
-#   - type `init` is required for initialization
-
+#' Event dispatcher
+#'
+#' `init` creates `burnMap` and schedules the first `burn`; `burn` spreads this
+#' year's escaped fires and reschedules itself.
+#'
+#' @param sim A `simList`.
+#' @param eventTime Time of the event.
+#' @param eventType `"init"` or `"burn"`.
+#' @param debug Unused.
+#'
+#' @return The `simList`, invisibly.
 doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE) {
   moduleName <- current(sim)$moduleName
 
@@ -93,9 +90,6 @@ doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE) {
 
       sim <- scheduleEvent(sim, eventTime = P(sim)$.runInitialTime, moduleName, "burn", 
                            eventPriority = 5.13)
-
-      # if (!is.na(P(sim)$.plotInitialTime))
-      #   sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, moduleName, "plot", eventPriority = .last())
     },
     burn = {
       sim <- burn(sim)
@@ -104,27 +98,28 @@ doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE) {
         sim <- scheduleEvent(sim, time(sim) + P(sim)$.runInterval, moduleName, "burn", 
                              eventPriority = 5.13)
     },
-    # plot = {
-    #   sim <- plot(sim)
-    # 
-    #   if (!is.na(P(sim)$.plotInterval))
-    #     sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, moduleName, "plot", eventPriority = .last())
-    # },
     warning(paste("Undefined event type: '", current(sim)[1, "eventType", with = FALSE],
                   "' in module '", current(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
   )
   invisible(sim)
 }
 
+#' Spread this year's escaped fires
+#'
+#' Spreads fires with `SpaDES.tools::spread2()` from every pixel in
+#' `sim$ignitionsAndEscapes` with `escapes > 0`, then updates the burn outputs.
+#' Does nothing if there are no escapes.
+#'
+#' @param sim A `simList`.
+#'
+#' @return The `simList`, invisibly, with `burnDT`, `burnMap`, `burnSummary`,
+#'   `rstAnnualBurnID` and `rstCurrentBurn` updated.
 burn <- function(sim) {
 
   moduleName <- current(sim)$moduleName
 
   escaped <- sum(sim$ignitionsAndEscapes$escapes, na.rm = TRUE)
 
-  #this will be a new object, containing ignitions and optionally escapes
-
-  #this test will need to be different
   if (escaped > 0L) {
     if ("fireSense_SpreadPredict" %in% P(sim)$whichModulesToPrepare) {
       ## Spread
@@ -132,13 +127,15 @@ burn <- function(sim) {
       successfulEscapes <- sim$ignitionsAndEscapes[escapes > 0]
       igLocs <- rep(successfulEscapes$pixelID, times = successfulEscapes$escapes)
       igLocsList <- list(igLocs)
+      ## spread2 fails with duplicated start pixels, so duplicates get their own spread2 call
+      ## Only one round of this: with 3 or more escapes on one pixel the last call still has
+      ## duplicates, and spread2 stops with "start has duplicates".
       if (any(duplicated(tail(igLocsList, 1)[[1]]))) { 
-      # if (any(table(igLocs) > 1)) {
         len <- length(igLocsList)
         igLocsList[[len + 1]] <- 
           igLocsList[[len]][duplicated(igLocsList[[len]])]
         igLocsList[[len]] <- unique(igLocsList[[len]])
-      } # browser() # spread2 will fail with duplicates; what to do?
+      }
       
       spreadStates <- Map(igLocs = igLocsList, function(igLocs) {
         spreadState <- SpaDES.tools::spread2(
@@ -157,7 +154,6 @@ burn <- function(sim) {
       sim$rstCurrentBurn[spreadState$pixels] <- 1
       sim$burnMap[spreadState$pixels] <- sim$burnMap[spreadState$pixels] + 1
       par("pin" = pmax(par()$pin, 0)) # not sure why par$pin is negative
-      # on.exit(par(opar), add = TRUE)
       if ((time(sim) - start(sim) ) %% P(sim)$.plotInterval < 1) {
         Plots(c(sim$rstAnnualBurnID |> setNames(paste0("Annual Fire IDs ", time(sim))),
                 sim$burnMap |> setNames(paste0("Cumulative Burn Map ", time(sim))),
@@ -176,85 +172,6 @@ burn <- function(sim) {
       setnames(tempDT, c("initialPixels"), c("igLoc"))
       sim$burnSummary <- rbind(sim$burnSummary, tempDT)
     }
-  }
-
-  invisible(sim)
-}
-
-plot <- function(sim) {
-  if (P(sim)$plotIgnitions) {
-    #TODO: add to plots
-    ## this plot treats escapes and ignitions as points, but burns as rasters
-    ## it is impossible to show escapes as a raster, and burns do not plot well as points
-    ## this requires some ggplot hacks
-
-    flam <- as.data.frame(as(sim$flammableRTM, "SpatialPixelsDataFrame"))
-    names(flam) <- c("value", "x", "y")
-    flam[flam$value == 0,]$value <- "unburnable"
-    flam[flam$value == 1,]$value <- "burnable"
-
-    escapes <- raster::xyFromCell(sim$flammableRTM,
-                                  cell = sim$ignitionsAndEscapes[escaped == 1,]$pixelID) %>%
-      as.data.table(.)
-    ignitions <- raster::xyFromCell(sim$flammableRTM,
-                                    cell = sim$ignitionsAndEscapes$pixelID) %>%
-      as.data.table(.)
-
-    #TODO this all needs review
-    ## there should be an easier anti-join in data.table
-    #   both <- rbind(escapes, ignitions)
-    #   both <- both[, .N, .(x, y)] #want only xy of points that did not escape
-    #   ignitions <- both[N == 1, .(x, y)]
-    #
-    #   ignitions <- SpatialPointsDataFrame(coords = ignitions,
-    #                                       proj4string = crs(sim$flammableRTM),
-    #                                       data = data.frame(stat = as.factor(rep(x = "ignited",
-    #                                                                              times = nrow(ignitions))))
-    #   )
-    #
-    #   escapes <- SpatialPointsDataFrame(coords = escapes,
-    #                                     proj4string = crs(sim$flammableRTM),
-    #                                     data = data.frame(stat = as.factor(rep(x = "escaped",
-    #                                                                            times = nrow(escapes))))
-    #   )
-    #
-    #   ignitions <- ggspatial::df_spatial(ignitions)
-    #   escapes <- ggspatial::df_spatial(escapes)
-    #   burns <- as.data.frame(as(sim$rstCurrentBurn, "SpatialPixelsDataFrame"))
-    #   names(burns) <- c("value", "x", "y")
-    #   burns$value <- "burned"
-    #   burns$value <- factor(burns$value, levels = c("ignited", "escaped", "burned"))
-    #   g <- ggplot() +
-    #     geom_raster(data = flam,
-    #                 aes(x = x, y = y, fill = value),
-    #                 show.legend = TRUE) +
-    #     geom_raster(data = burns,
-    #                 aes(x = x, y = y, fill = value),
-    #                 show.legend = FALSE) +
-    #     geom_point(data = ignitions,
-    #                aes(x = x, y = y),
-    #                color = "#EFFD5F",
-    #                show.legend = FALSE,
-    #                cex = 0.7) +
-    #     geom_point(data = escapes,
-    #                aes(x = x, y = y),
-    #                color = "#EC9706",
-    #                show.legend = FALSE,
-    #                cex = 0.7) +
-    #     theme_minimal() +
-    #     scale_fill_manual(name = "fire status",
-    #                       values = c("burnable" = "#028A0F", #green = burnable
-    #                                  "burned" = "#D0312D",  #red = burned
-    #                                  "escaped" = "#EC9706", #orange = escaped
-    #                                  "ignited" = "#EFFD5F", #yellow = #ignited
-    #                                  "unburnable" = "#C5C6D0"), #grey = unburnable
-    #                       drop = FALSE)
-    #   #there is a warning about geom_tile, but it can't be used with geom_point
-    #   ggsave(plot = g, filename = paste0('firePlotGG', time(sim), ".png"),
-    #          device = "png", path = file.path(outputPath(sim), "figures"))
-    #
-    #   mod$ignitions <- NULL
-    #   mod$escapes <- NULL
   }
 
   invisible(sim)

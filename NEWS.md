@@ -1,3 +1,10 @@
+# fireSense (development version)
+
+## Breaking changes
+
+- Removed parameters that nothing read: `plotIgnitions`, `.saveInitialTime`, `.saveInterval`. Stop setting them.
+- Input `flammableRTM` is now declared `SpatRaster` (was `list`), which is how it was always used.
+
 # fireSense 2.0.2
 
 First release from `development` since `master` was last updated (2022-02-17). Full history: https://github.com/PredictiveEcology/fireSense/compare/504f990...v2.0.2
