@@ -121,9 +121,7 @@ test_that("two fires in one block share it without overlap", {
 })
 
 test_that("two escapes on one pixel burn the block once", {
-  ## spread2() cannot start twice from one pixel, so the duplicate gets its own call and
-  ## identical rows are then dropped. (With 3+ escapes on a pixel spread2() stops with
-  ## "start has duplicates"; that is not pinned here.)
+  ## several escapes on one pixel are one fire: the first start burns the pixel, the others cannot
   sim <- runFireSense(ig(1L, 2L))
   expect_identical(sort(sim$burnDT$pixels), westCells())
   expect_identical(sim$burnSummary$N, 40L)
@@ -165,4 +163,59 @@ test_that("stochastic spread is reproducible and stays within the rules", {
   expect_true(all(c(1L, 10L) %in% a$burnDT$pixels))
   expect_identical(anyDuplicated(a$burnDT$pixels), 0L)
   expect_lt(nrow(a$burnDT), 90L) # p = 0.3 is far below the ~0.5 needed to fill a block
+})
+
+test_that("three or more escapes on one pixel burn the block once (spread2 used to stop here)", {
+  sim <- runFireSense(ig(1L, 3L))
+  expect_identical(sort(sim$burnDT$pixels), westCells())
+  expect_identical(sim$burnSummary$N, 40L)
+})
+
+## ---- the per-year random effect (yearSpreadSD in the fit) ----
+
+test_that("without a random effect the spread probability is used as it is", {
+  sp <- toySpreadProb(p = 0.3)
+  p <- as.vector(terra::values(sp))
+  expect_identical(yearSpreadProb(sp, NULL), p)
+  expect_identical(yearSpreadProb(sp, 0), p)
+  expect_identical(yearSpreadProb(sp, toySpreadProb(p = 0)), p)   # an sd raster of 0
+})
+
+test_that("one draw per year shifts every pixel's logit spread probability by the same amount", {
+  sp <- toySpreadProb(p = 0.3, barrier = 0.1)
+  set.seed(11)
+  q <- yearSpreadProb(sp, 0.8)
+  shift <- stats::qlogis(q) - stats::qlogis(as.vector(terra::values(sp)))
+  expect_equal(max(shift) - min(shift), 0, tolerance = 1e-9)       # same for every pixel: one year, one eps
+  set.seed(11)
+  expect_equal(shift[1], 0.8 * stats::rnorm(1))                    # eps = z * sd
+})
+
+test_that("an sd raster scales the year's shared draw per pixel (several ELFs)", {
+  sp <- toySpreadProb(p = 0.3, barrier = 0.3)
+  sdR <- sp
+  terra::values(sdR) <- 0
+  sdR[eastCells()] <- 1                                            # west: sd 0, east: sd 1
+  set.seed(5)
+  q <- yearSpreadProb(sp, sdR)
+  shift <- stats::qlogis(q) - stats::qlogis(0.3)
+  expect_equal(shift[westCells()], rep(0, 40))
+  expect_equal(shift[eastCells()], rep(shift[eastCells()][1], 50))
+  expect_false(isTRUE(all.equal(shift[eastCells()][1], 0)))
+})
+
+test_that("the year effect changes how much burns, and all fires in a year share it", {
+  burned <- function(seed, sd) {
+    set.seed(seed)
+    s <- runFireSense(ig(c(1L, 10L), c(1L, 1L)),
+                      objects = list(fireSense_SpreadPredicted = toySpreadProb(p = 0.3),
+                                     fireSense_SpreadSD = sd))
+    s$burnSummary$N
+  }
+  noEffect <- sapply(1:20, burned, sd = 0)
+  withEffect <- sapply(1:20, burned, sd = 3)
+  ## a large sd makes some years burn whole blocks and others almost nothing
+  expect_gt(stats::var(colSums(withEffect)), stats::var(colSums(noEffect)))
+  ## the two fires of a year move together: their sizes correlate across years
+  expect_gt(stats::cor(withEffect[1, ], withEffect[2, ]), 0.5)
 })

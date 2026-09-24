@@ -17,6 +17,7 @@ test_that("inputs are the expected names and classes", {
   expect_identical(
     inputs[order(names(inputs))],
     c(fireSense_SpreadPredicted = "SpatRaster",
+      fireSense_SpreadSD        = "SpatRaster|numeric",
       flammableRTM              = "SpatRaster",
       ignitionsAndEscapes       = "data.table",
       rasterToMatch             = "SpatRaster")

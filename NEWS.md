@@ -1,5 +1,15 @@
 # fireSense (development version)
 
+- Fires spread with `SpaDES.tools::spreadCpp()`, the spread the fit uses (fireSenseUtils' objective), instead
+  of `spread2()`, so a forecast spreads fires as the fitted parameters assume. Several escapes on one pixel are one
+  fire; `spread2()` stopped with "start has duplicates" at three or more. `burnDT` now holds `initialPixels`,
+  `pixels` and `fire_id`.
+- New input `fireSense_SpreadSD`, the per-year random effect fitted by fireSense_SpreadFit (`yearSpreadSD`): each
+  year draws one z ~ N(0, 1) and every fire that year spreads with plogis(qlogis(p) + z * sd). A seasonal
+  departure: a bad year makes every fire bigger. A raster sd (one per ELF) scales the shared z per ELF. `NULL`
+  or 0: no effect.
+
+
 ## Breaking changes
 
 - Removed parameters that nothing read: `plotIgnitions`, `.saveInitialTime`, `.saveInterval`. Stop setting them.

@@ -12,7 +12,7 @@ defineModule(sim, list(
     person(c("Alex", "M."), "Chubaty", email = "achubaty@for-cast.ca", role = "ctb")
   ),
   childModules = character(),
-  version = numeric_version("2.0.2.9000"),
+  version = numeric_version("2.0.2.9001"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list("citation.bib"),
@@ -35,6 +35,11 @@ defineModule(sim, list(
   inputObjects = rbind(
     expectsInput("fireSense_SpreadPredicted", "SpatRaster",
                  "Per-pixel spread probability for the current year."),
+    expectsInput("fireSense_SpreadSD", "SpatRaster|numeric",
+                 paste("Sd of the per-year random effect on logit spread probability, as fitted by",
+                       "fireSense_SpreadFit (`yearSpreadSD`): a raster aligned with `fireSense_SpreadPredicted`",
+                       "(from fireSense_SpreadPredict, per ELF) or one number. Each year draws one z ~ N(0, 1);",
+                       "all of that year's fires spread with plogis(qlogis(p) + z * sd). NULL or 0: no effect.")),
     expectsInput("flammableRTM", "SpatRaster", 
                  "Binary SpatRaster (1 = flammable, 0 = not). Non-flammable pixels are `NA` in `burnMap`."),
     expectsInput("ignitionsAndEscapes", "data.table",
@@ -44,7 +49,8 @@ defineModule(sim, list(
   ),
   outputObjects = rbind(
     createsOutput("burnDT", "data.table",
-                  "`spread2()` output for the most recent fire year: one row per burned pixel, plus `fire_id`."),
+                  paste("The most recent fire year's burned pixels: `initialPixels` (the fire's ignition pixel),",
+                        "`pixels`, and `fire_id`.")),
     createsOutput("burnMap", "SpatRaster",
                   "Number of times each pixel has burned. `NA` where not flammable."),
     createsOutput("burnSummary", "data.table",
@@ -106,7 +112,7 @@ doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE) {
 
 #' Spread this year's escaped fires
 #'
-#' Spreads fires with `SpaDES.tools::spread2()` from every pixel in
+#' Spreads fires with `SpaDES.tools::spreadCpp()` from every pixel in
 #' `sim$ignitionsAndEscapes` with `escapes > 0`, then updates the burn outputs.
 #' Does nothing if there are no escapes.
 #'
@@ -123,30 +129,19 @@ burn <- function(sim) {
   if (escaped > 0L) {
     if ("fireSense_SpreadPredict" %in% P(sim)$whichModulesToPrepare) {
       ## Spread
-      # Note: if none of the cells are active SpaDES.tools::spread2() returns spreadState unchanged
       successfulEscapes <- sim$ignitionsAndEscapes[escapes > 0]
       igLocs <- rep(successfulEscapes$pixelID, times = successfulEscapes$escapes)
-      igLocsList <- list(igLocs)
-      ## spread2 fails with duplicated start pixels, so duplicates get their own spread2 call
-      ## Only one round of this: with 3 or more escapes on one pixel the last call still has
-      ## duplicates, and spread2 stops with "start has duplicates".
-      if (any(duplicated(tail(igLocsList, 1)[[1]]))) { 
-        len <- length(igLocsList)
-        igLocsList[[len + 1]] <- 
-          igLocsList[[len]][duplicated(igLocsList[[len]])]
-        igLocsList[[len]] <- unique(igLocsList[[len]])
-      }
-      
-      spreadStates <- Map(igLocs = igLocsList, function(igLocs) {
-        spreadState <- SpaDES.tools::spread2(
-          landscape = sim$fireSense_SpreadPredicted,
-          spreadProb = sim$fireSense_SpreadPredicted,
-          directions = 8L,
-          start = igLocs,
-          asRaster = FALSE)  
-      })
-      
-      spreadState <- rbindlist(spreadStates) |> unique()
+      ## this year's spread probability, with the year's random effect if the fit has one
+      spreadProbYear <- yearSpreadProb(sim$fireSense_SpreadPredicted, sim$fireSense_SpreadSD)
+      ## spreadCpp(), the spread the fit uses (fireSenseUtils' objective), so a forecast spreads fires
+      ## as the fitted parameters assume. Several escapes on one pixel are one fire: the first start
+      ## burns the pixel and the others cannot.
+      spreadState <- SpaDES.tools::spreadCpp(
+        landscape = sim$fireSense_SpreadPredicted,
+        loci = igLocs,
+        spreadProb = spreadProbYear,
+        directions = 8L)
+      spreadState <- data.table(initialPixels = spreadState$initialLocus, pixels = spreadState$indices)
       spreadState[ , fire_id := .GRP, by = "initialPixels"] # Add an fire_id column
       sim$rstAnnualBurnID <- rast(sim$fireSense_SpreadPredicted)
       sim$rstCurrentBurn <- rast(sim$fireSense_SpreadPredicted)
@@ -175,4 +170,24 @@ burn <- function(sim) {
   }
 
   invisible(sim)
+}
+
+#' This year's spread probability, with the per-year random effect
+#'
+#' The fit (`fireSenseUtils::.objfunSpreadFit()` with `yearSpreadSD`) gives each year one eps on logit
+#' spread probability, shared by all that year's fires. Here each year draws z ~ N(0, 1) and uses
+#' plogis(qlogis(p) + z * sd). With a raster `sd` (several ELFs, each with its own fitted sd) the ELFs
+#' share the year's z, each scaled by its own sd.
+#'
+#' @param spreadProbRas `SpatRaster` of spread probability.
+#' @param sd `NULL`, one number, or a `SpatRaster` aligned with `spreadProbRas`.
+#' @return Numeric vector of spread probability, one per pixel.
+yearSpreadProb <- function(spreadProbRas, sd) {
+  p <- terra::values(spreadProbRas, mat = FALSE)
+  if (is.null(sd)) return(p)
+  s <- if (inherits(sd, "SpatRaster")) terra::values(sd, mat = FALSE) else rep_len(sd, length(p))
+  s[is.na(s)] <- 0
+  if (!any(s > 0)) return(p)
+  z <- stats::rnorm(1)
+  stats::plogis(stats::qlogis(p) + z * s)
 }
