@@ -12,7 +12,7 @@ defineModule(sim, list(
     person(c("Alex", "M."), "Chubaty", email = "achubaty@for-cast.ca", role = "ctb")
   ),
   childModules = character(),
-  version = numeric_version("2.0.2.9001"),
+  version = numeric_version("2.0.2.9002"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list("citation.bib"),
@@ -27,6 +27,8 @@ defineModule(sim, list(
                     "Time of the first `burn` event."),
     defineParameter(".runInterval", "numeric", 1, NA, NA,
                     "Years between `burn` events. `NA` burns once only."),
+    defineParameter(".studyAreaName", "character", NA, NA, NA,
+                    "Human-readable name for the study area used."),
     defineParameter("whichModulesToPrepare", "character",
                     default = c("fireSense_SpreadPredict", "fireSense_IgnitionPredict", "fireSense_EscapePredict"),
                     NA, NA,

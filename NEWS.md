@@ -1,5 +1,6 @@
 # fireSense (development version)
 
+- New parameter `.studyAreaName` (default `NA`), the name PredictiveEcology modules use for the study area. This module does not use it yet.
 - Fires spread with `SpaDES.tools::spreadCpp()`, the spread the fit uses (fireSenseUtils' objective), instead
   of `spread2()`, so a forecast spreads fires as the fitted parameters assume. Several escapes on one pixel are one
   fire; `spread2()` stopped with "start has duplicates" at three or more. `burnDT` now holds `initialPixels`,

@@ -42,6 +42,7 @@ test_that("parameters are the expected names and classes", {
                 .plots                = "character|logical",
                 .runInitialTime       = "numeric",
                 .runInterval          = "numeric",
+                .studyAreaName        = "character",
                 whichModulesToPrepare = "character")
   expect_identical(classes[order(names(classes))], expected[order(names(expected))])
 })
