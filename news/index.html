@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">fireSense</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.2.9000</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.2.9001</span>
       </span>
     </div>
 
@@ -46,7 +46,9 @@
 
     <div class="section level2">
 <h2 class="page-header" data-toc-text="development version" id="firesense-development-version">fireSense (development version)<a class="anchor" aria-label="anchor" href="#firesense-development-version"></a></h2>
-<div class="section level3">
+<ul><li>Fires spread with <code>SpaDES.tools::spreadCpp()</code>, the spread the fit uses (fireSenseUtils’ objective), instead of <code>spread2()</code>, so a forecast spreads fires as the fitted parameters assume. Several escapes on one pixel are one fire; <code>spread2()</code> stopped with “start has duplicates” at three or more. <code>burnDT</code> now holds <code>initialPixels</code>, <code>pixels</code> and <code>fire_id</code>.</li>
+<li>New input <code>fireSense_SpreadSD</code>, the per-year random effect fitted by fireSense_SpreadFit (<code>yearSpreadSD</code>): each year draws one z ~ N(0, 1) and every fire that year spreads with plogis(qlogis(p) + z * sd). A seasonal departure: a bad year makes every fire bigger. A raster sd (one per ELF) scales the shared z per ELF. <code>NULL</code> or 0: no effect.</li>
+</ul><div class="section level3">
 <h3 id="breaking-changes-development-version">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-development-version"></a></h3>
 <ul><li>Removed parameters that nothing read: <code>plotIgnitions</code>, <code>.saveInitialTime</code>, <code>.saveInterval</code>. Stop setting them.</li>
 <li>Input <code>flammableRTM</code> is now declared <code>SpatRaster</code> (was <code>list</code>), which is how it was always used.</li>

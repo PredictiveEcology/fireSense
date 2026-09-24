@@ -1,7 +1,7 @@
 ---
 title: "fireSense Manual"
 subtitle: "v.0.0.0.9000"
-date: "Last updated: 2026-09-21"
+date: "Last updated: 2026-09-24"
 output:
   bookdown::html_document2:
     toc: true
@@ -64,6 +64,12 @@ Table \@ref(tab:moduleInputs-fireSense) shows the full list of module inputs.
    <td style="text-align:left;"> fireSense_SpreadPredicted </td>
    <td style="text-align:left;"> SpatRaster </td>
    <td style="text-align:left;"> Per-pixel spread probability for the current year. </td>
+   <td style="text-align:left;"> NA </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> fireSense_SpreadSD </td>
+   <td style="text-align:left;"> SpatRaster&amp;#124;numeric </td>
+   <td style="text-align:left;"> Sd of the per-year random effect on logit spread probability, as fitted by fireSense_SpreadFit (`yearSpreadSD`): a raster aligned with `fireSense_SpreadPredicted` (from fireSense_SpreadPredict, per ELF) or one number. Each year draws one z ~ N(0, 1); all of that year's fires spread with plogis(qlogis(p) + z sd). NULL or 0: no effect. </td>
    <td style="text-align:left;"> NA </td>
   </tr>
   <tr>
@@ -177,7 +183,7 @@ Description of the module outputs (Table \@ref(tab:moduleOutputs-fireSense)).
   <tr>
    <td style="text-align:left;"> burnDT </td>
    <td style="text-align:left;"> data.table </td>
-   <td style="text-align:left;"> `spread2()` output for the most recent fire year: one row per burned pixel, plus `fire_id`. </td>
+   <td style="text-align:left;"> The most recent fire year's burned pixels: `initialPixels` (the fire's ignition pixel), `pixels`, and `fire_id`. </td>
   </tr>
   <tr>
    <td style="text-align:left;"> burnMap </td>
