@@ -32,7 +32,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">fireSense</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.2.9001</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.2.9002</span>
       </span>
     </div>
 
@@ -64,7 +64,7 @@
       <h1 data-toc-skip>fireSense Manual</h1>
             <h3 data-toc-skip class="subtitle">v.0.0.0.9000</h3>
             
-            <h4 data-toc-skip class="date">Last updated: 2026-09-24</h4>
+            <h4 data-toc-skip class="date">Last updated: 2026-09-25</h4>
       
 
       <div class="hidden name"><code>fireSense.Rmd</code></div>
@@ -170,7 +170,21 @@ ignitionsAndEscapes
 data.table
 </td>
 <td style="text-align:left;">
-One row per ignited pixel, with <code>pixelID</code> and <code>escapes</code>, the number of escaped fires there.
+One row per ignition, with <code>pixelID</code> and <code>escaped</code> (logical), as fireSense_IgnitionPredict (&gt;= 1.0.0.9003) makes it. Each escaped ignition is one fire.
+</td>
+<td style="text-align:left;">
+NA
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+nonEscapedFireSizesHa
+</td>
+<td style="text-align:left;">
+numeric
+</td>
+<td style="text-align:left;">
+Sizes (ha) of the study area’s observed fires below <code>escapeSizeHa</code>, from fireSense_dataPrepFit. Each ignition that did not escape burns a patch of a size drawn from these. <code>NULL</code>: ignitions that did not escape burn nothing.
 </td>
 <td style="text-align:left;">
 NA
@@ -295,6 +309,66 @@ NA
 </td>
 <td style="text-align:left;">
 Years between <code>burn</code> events. <code>NA</code> burns once only.
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+escapeSizeHa
+</td>
+<td style="text-align:left;">
+numeric
+</td>
+<td style="text-align:left;">
+50
+</td>
+<td style="text-align:left;">
+0
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+Size (ha) a fire must reach to count as escaped, as in the spread fit: each escaped fire burns this area first, whatever its spread probability, then spreads normally. <code>NA</code> spreads escaped fires from their ignition pixel only.
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+jumpTries
+</td>
+<td style="text-align:left;">
+integer
+</td>
+<td style="text-align:left;">
+0
+</td>
+<td style="text-align:left;">
+0
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+Passed to <code><a href="https://spades-tools.predictiveecology.org/reference/spreadCpp.html" class="external-link">SpaDES.tools::spreadCpp()</a></code> for escaped fires: attempts to jump for a fire still under <code>escapeSizeHa</code> that has nowhere left to spread. 0 (default) is off.
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+jumpMeanDist
+</td>
+<td style="text-align:left;">
+numeric
+</td>
+<td style="text-align:left;">
+3
+</td>
+<td style="text-align:left;">
+0
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+Passed to <code><a href="https://spades-tools.predictiveecology.org/reference/spreadCpp.html" class="external-link">SpaDES.tools::spreadCpp()</a></code>: mean jump distance, in cells.
 </td>
 </tr>
 <tr>

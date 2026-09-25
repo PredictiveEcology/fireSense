@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">fireSense</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.2.9001</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.2.9002</span>
       </span>
     </div>
 
@@ -46,8 +46,12 @@
 
     <div class="section level2">
 <h2 class="page-header" data-toc-text="development version" id="firesense-development-version">fireSense (development version)<a class="anchor" aria-label="anchor" href="#firesense-development-version"></a></h2>
-<ul><li>Fires spread with <code>SpaDES.tools::spreadCpp()</code>, the spread the fit uses (fireSenseUtils’ objective), instead of <code>spread2()</code>, so a forecast spreads fires as the fitted parameters assume. Several escapes on one pixel are one fire; <code>spread2()</code> stopped with “start has duplicates” at three or more. <code>burnDT</code> now holds <code>initialPixels</code>, <code>pixels</code> and <code>fire_id</code>.</li>
-<li>New input <code>fireSense_SpreadSD</code>, the per-year random effect fitted by fireSense_SpreadFit (<code>yearSpreadSD</code>): each year draws one z ~ N(0, 1) and every fire that year spreads with plogis(qlogis(p) + z * sd). A seasonal departure: a bad year makes every fire bigger. A raster sd (one per ELF) scales the shared z per ELF. <code>NULL</code> or 0: no effect.</li>
+<ul><li><p>One fire per escaped ignition. <code>ignitionsAndEscapes</code> must have <code>escaped</code> (fireSense_IgnitionPredict &gt;= 1.0.0.9003); <code>escapes</code> is a coarse pixel’s count repeated on each of its ignitions, and spreading <code>escapes</code> fires from every row gave, e.g., 8 fires where there were 2 escapes.</p></li>
+<li><p>New parameter <code>escapeSizeHa</code> (default 50), as in the spread fit: each escaped fire burns its first 50 ha whatever its spread probability (<code>SpaDES.tools::spreadCpp(minSize =)</code>), then spreads normally. <code>jumpTries</code> (default 0, off) and <code>jumpMeanDist</code> (default 3 cells) pass through to <code>spreadCpp()</code> for fires stuck under that size.</p></li>
+<li><p>New input <code>nonEscapedFireSizesHa</code> (from fireSense_dataPrepFit): each ignition that did not escape burns a small patch with a size drawn from the study area’s observed fires below <code>escapeSizeHa</code>. Without it, as before, those ignitions burn nothing.</p></li>
+<li><p>Needs SpaDES.tools &gt;= 2.1.3.9009 and fireSenseUtils &gt;= 0.2.3.9044. Version 2.0.2.9002.</p></li>
+<li><p>Fires spread with <code><a href="https://spades-tools.predictiveecology.org/reference/spreadCpp.html" class="external-link">SpaDES.tools::spreadCpp()</a></code>, the spread the fit uses (fireSenseUtils’ objective), instead of <code>spread2()</code>, so a forecast spreads fires as the fitted parameters assume. Several escapes on one pixel are one fire; <code>spread2()</code> stopped with “start has duplicates” at three or more. <code>burnDT</code> now holds <code>initialPixels</code>, <code>pixels</code> and <code>fire_id</code>.</p></li>
+<li><p>New input <code>fireSense_SpreadSD</code>, the per-year random effect fitted by fireSense_SpreadFit (<code>yearSpreadSD</code>): each year draws one z ~ N(0, 1) and every fire that year spreads with plogis(qlogis(p) + z * sd). A seasonal departure: a bad year makes every fire bigger. A raster sd (one per ELF) scales the shared z per ELF. <code>NULL</code> or 0: no effect.</p></li>
 </ul><div class="section level3">
 <h3 id="breaking-changes-development-version">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-development-version"></a></h3>
 <ul><li>Removed parameters that nothing read: <code>plotIgnitions</code>, <code>.saveInitialTime</code>, <code>.saveInterval</code>. Stop setting them.</li>

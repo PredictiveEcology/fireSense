@@ -20,7 +20,7 @@ share the year's z, each scaled by its own sd."><!-- mathjax --><script src="htt
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">fireSense</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.2.9001</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.0.2.9002</span>
       </span>
     </div>
 
@@ -49,7 +49,7 @@ share the year's z, each scaled by its own sd."><!-- mathjax --><script src="htt
     </div>
 
     <div class="ref-description">
-    <p>The fit (<code>fireSenseUtils::.objfunSpreadFit()</code> with <code>yearSpreadSD</code>) gives each year one eps on logit
+    <p>The fit (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/dot-objfunSpreadFit.html" class="external-link">fireSenseUtils::.objfunSpreadFit()</a></code> with <code>yearSpreadSD</code>) gives each year one eps on logit
 spread probability, shared by all that year's fires. Here each year draws z ~ N(0, 1) and uses
 plogis(qlogis(p) + z * sd). With a raster <code>sd</code> (several ELFs, each with its own fitted sd) the ELFs
 share the year's z, each scaled by its own sd.</p>
