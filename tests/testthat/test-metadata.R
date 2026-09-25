@@ -43,6 +43,7 @@ test_that("parameters are the expected names and classes", {
                 .plots                = "character|logical",
                 .runInitialTime       = "numeric",
                 .runInterval          = "numeric",
+                .studyAreaName        = "character",
                 escapeSizeHa          = "numeric",
                 jumpMeanDist          = "numeric",
                 jumpTries             = "integer",

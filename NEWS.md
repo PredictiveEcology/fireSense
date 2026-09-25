@@ -1,5 +1,6 @@
 # fireSense (development version)
 
+- New parameter `.studyAreaName` (default `NA`), the name PredictiveEcology modules use for the study area. This module does not use it yet.
 - `rstCurrentBurn` and `rstAnnualBurnID` now start empty in every burn event. In a year with no fire (no
   ignitions, or none escaped and no small fires) `burn()` returned before rebuilding them, so they kept the
   previous fire year's pixels; CBM_dataPrep, which reads `rstCurrentBurn` yearly as disturbance events, would have

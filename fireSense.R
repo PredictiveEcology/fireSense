@@ -30,6 +30,8 @@ defineModule(sim, list(
                     "Time of the first `burn` event."),
     defineParameter(".runInterval", "numeric", 1, NA, NA,
                     "Years between `burn` events. `NA` burns once only."),
+    defineParameter(".studyAreaName", "character", NA, NA, NA,
+                    "Human-readable name for the study area used."),
     defineParameter("escapeSizeHa", "numeric", 50, 0, NA,
                     paste("Size (ha) a fire must reach to count as escaped, as in the spread fit: each escaped",
                           "fire burns this area first, whatever its spread probability, then spreads normally.",
