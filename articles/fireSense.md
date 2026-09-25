@@ -148,6 +148,14 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense))
    <td style="text-align:left;"> Years between `burn` events. `NA` burns once only. </td>
   </tr>
   <tr>
+   <td style="text-align:left;"> .studyAreaName </td>
+   <td style="text-align:left;"> character </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> Human-readable name for the study area used. </td>
+  </tr>
+  <tr>
    <td style="text-align:left;"> escapeSizeHa </td>
    <td style="text-align:left;"> numeric </td>
    <td style="text-align:left;"> 50 </td>
