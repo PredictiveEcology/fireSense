@@ -1,6 +1,6 @@
 ## burn() plots when (time - start) %% .plotInterval < 1, to the devices named in `.plots`.
 
-ig <- data.table::data.table(pixelID = 1L, escapes = 1L)
+ig <- data.table::data.table(pixelID = 1L, escapes = 1L, escaped = TRUE)
 figDir <- function() file.path(toyPaths()$outputPath, "figures", "fireSense")
 
 test_that(".plots = 'png' writes one figure per plotting year and registers it", {
@@ -27,7 +27,7 @@ test_that("the default .plots = NULL writes no figure", {
 
 test_that("no figure is written in a year without escapes", {
   unlink(figDir(), recursive = TRUE)
-  sim <- runFireSense(data.table::data.table(pixelID = 1L, escapes = 0L),
+  sim <- runFireSense(data.table::data.table(pixelID = 1L, escapes = 0L, escaped = FALSE),
                       params = list(.plots = "png", .plotInterval = 1))
   expect_identical(length(list.files(figDir())), 0L)
 })

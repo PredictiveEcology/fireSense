@@ -1,6 +1,6 @@
 ## Which events run, when, and what gets scheduled next.
 
-ig <- data.table::data.table(pixelID = 1L, escapes = 1L)
+ig <- data.table::data.table(pixelID = 1L, escapes = 1L, escaped = TRUE)
 
 fsCompleted <- function(sim) {
   cm <- SpaDES.core::completed(sim)

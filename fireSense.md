@@ -1,7 +1,7 @@
 ---
 title: "fireSense Manual"
 subtitle: "v.0.0.0.9000"
-date: "Last updated: 2026-09-24"
+date: "Last updated: 2026-09-25"
 output:
   bookdown::html_document2:
     toc: true
@@ -79,7 +79,13 @@ Table \@ref(tab:moduleInputs-fireSense) shows the full list of module inputs.
   <tr>
    <td style="text-align:left;"> ignitionsAndEscapes </td>
    <td style="text-align:left;"> data.table </td>
-   <td style="text-align:left;"> One row per ignited pixel, with `pixelID` and `escapes`, the number of escaped fires there. </td>
+   <td style="text-align:left;"> One row per ignition, with `pixelID` and `escaped` (logical), as fireSense_IgnitionPredict (&gt;= 1.0.0.9003) makes it. Each escaped ignition is one fire. </td>
+   <td style="text-align:left;"> NA </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> nonEscapedFireSizesHa </td>
+   <td style="text-align:left;"> numeric </td>
+   <td style="text-align:left;"> Sizes (ha) of the study area's observed fires below `escapeSizeHa`, from fireSense_dataPrepFit. Each ignition that did not escape burns a patch of a size drawn from these. `NULL`: ignitions that did not escape burn nothing. </td>
    <td style="text-align:left;"> NA </td>
   </tr>
   <tr>
@@ -138,6 +144,30 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense))
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Years between `burn` events. `NA` burns once only. </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> escapeSizeHa </td>
+   <td style="text-align:left;"> numeric </td>
+   <td style="text-align:left;"> 50 </td>
+   <td style="text-align:left;"> 0 </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> Size (ha) a fire must reach to count as escaped, as in the spread fit: each escaped fire burns this area first, whatever its spread probability, then spreads normally. `NA` spreads escaped fires from their ignition pixel only. </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> jumpTries </td>
+   <td style="text-align:left;"> integer </td>
+   <td style="text-align:left;"> 20 </td>
+   <td style="text-align:left;"> 0 </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> Passed to `SpaDES.tools::spreadCpp()` for escaped fires: attempts to jump for a fire still under `escapeSizeHa` that has nowhere left to spread. Default 20, as fireSense_SpreadFit fits with; 0 is off. </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> jumpMeanDist </td>
+   <td style="text-align:left;"> numeric </td>
+   <td style="text-align:left;"> 3 </td>
+   <td style="text-align:left;"> 0 </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> Passed to `SpaDES.tools::spreadCpp()`: mean jump distance, in cells. </td>
   </tr>
   <tr>
    <td style="text-align:left;"> whichModulesToPrepare </td>
