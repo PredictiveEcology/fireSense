@@ -156,10 +156,10 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense))
   <tr>
    <td style="text-align:left;"> jumpTries </td>
    <td style="text-align:left;"> integer </td>
-   <td style="text-align:left;"> 0 </td>
+   <td style="text-align:left;"> 20 </td>
    <td style="text-align:left;"> 0 </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Passed to `SpaDES.tools::spreadCpp()` for escaped fires: attempts to jump for a fire still under `escapeSizeHa` that has nowhere left to spread. 0 (default) is off. </td>
+   <td style="text-align:left;"> Passed to `SpaDES.tools::spreadCpp()` for escaped fires: attempts to jump for a fire still under `escapeSizeHa` that has nowhere left to spread. Default 20, as fireSense_SpreadFit fits with; 0 is off. </td>
   </tr>
   <tr>
    <td style="text-align:left;"> jumpMeanDist </td>
