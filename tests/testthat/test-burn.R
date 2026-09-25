@@ -67,8 +67,9 @@ test_that("no escapes at all leaves every output as init made it", {
   sim <- runFireSense(ig(c(1L, 10L), c(0L, 0L)))
   expect_null(sim$burnSummary)
   expect_null(sim$burnDT)
-  expect_null(sim$rstAnnualBurnID)
-  expect_false(terra::hasValues(sim$rstCurrentBurn)) # rast(rasterToMatch): geometry only
+  ## this year's burn rasters exist and are empty (geometry only), so nothing reads a previous year's burn
+  expect_false(terra::hasValues(sim$rstAnnualBurnID))
+  expect_false(terra::hasValues(sim$rstCurrentBurn))
   expect_identical(sum(vals(sim$burnMap), na.rm = TRUE), 0)
 })
 
@@ -221,4 +222,25 @@ test_that("the year effect changes how much burns, and all fires in a year share
   expect_gt(stats::var(colSums(withEffect)), stats::var(colSums(noEffect)))
   ## the two fires of a year move together: their sizes correlate across years
   expect_gt(stats::cor(withEffect[1, ], withEffect[2, ]), 0.5)
+})
+
+## rstCurrentBurn is this year's burn: CBM_dataPrep reads it every year as disturbance events
+## (disturbanceMeta$sourceObjectName), so a year without fire must leave nothing burned in it.
+test_that("a year without fire leaves no burn in rstCurrentBurn or rstAnnualBurnID", {
+  noFire <- list(noIgnitions = ig(integer(0), integer(0)),         # burn() returns at its first check
+                 noEscapes   = ig(1L, 0L))                          # no escape, no small-fire sizes
+  for (nm in names(noFire)) {
+    sim <- runFireSense(ig(1L, 1L), times = list(start = 1, end = 1), doSpades = FALSE)
+    sim <- suppressMessages(SpaDES.core::spades(sim, debug = FALSE))
+    expect_true(any(vals(sim$rstCurrentBurn) == 1, na.rm = TRUE), label = paste(nm, "year 1 burned"))
+    burnMap1 <- vals(sim$burnMap)
+    sim$ignitionsAndEscapes <- noFire[[nm]]
+    SpaDES.core::end(sim) <- 2
+    grDevices::pdf(NULL)
+    sim <- suppressMessages(SpaDES.core::spades(sim, debug = FALSE))
+    grDevices::dev.off()
+    expect_false(any(vals(sim$rstCurrentBurn) == 1, na.rm = TRUE), label = paste(nm, "rstCurrentBurn after a no-fire year"))
+    expect_true(all(is.na(vals(sim$rstAnnualBurnID))), label = paste(nm, "rstAnnualBurnID after a no-fire year"))
+    expect_identical(vals(sim$burnMap), burnMap1, label = paste(nm, "burnMap unchanged by a no-fire year"))
+  }
 })
