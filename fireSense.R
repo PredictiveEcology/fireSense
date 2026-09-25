@@ -12,7 +12,7 @@ defineModule(sim, list(
     person(c("Alex", "M."), "Chubaty", email = "achubaty@for-cast.ca", role = "ctb")
   ),
   childModules = character(),
-  version = numeric_version("2.0.2.9003"),
+  version = numeric_version("2.0.2.9004"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list("citation.bib"),
@@ -139,6 +139,13 @@ doEvent.fireSense = function(sim, eventTime, eventType, debug = FALSE) {
 #'   `rstAnnualBurnID` and `rstCurrentBurn` updated.
 burn <- function(sim) {
 
+  ## This year's burn starts empty (NA; burned pixels become 1), before any early return: a year
+  ## without fire must not keep last year's pixels. CBM_dataPrep reads `rstCurrentBurn` every year as
+  ## disturbance events, so a stale raster would burn the same pixels again.
+  tmpl <- if (!is.null(sim$fireSense_SpreadPredicted)) sim$fireSense_SpreadPredicted else sim$rasterToMatch
+  sim$rstCurrentBurn <- rast(tmpl)
+  sim$rstAnnualBurnID <- rast(tmpl)
+
   ig <- sim$ignitionsAndEscapes
   if (NROW(ig) == 0L || !"fireSense_SpreadPredict" %in% P(sim)$whichModulesToPrepare)
     return(invisible(sim))
@@ -171,8 +178,6 @@ burn <- function(sim) {
   if (NROW(spreadState) == 0L) return(invisible(sim))
 
   spreadState[ , fire_id := .GRP, by = "initialPixels"] # Add an fire_id column
-  sim$rstAnnualBurnID <- rast(sim$fireSense_SpreadPredicted)
-  sim$rstCurrentBurn <- rast(sim$fireSense_SpreadPredicted)
   sim$rstAnnualBurnID[spreadState$pixels] <- spreadState$fire_id
   sim$rstCurrentBurn[spreadState$pixels] <- 1
   sim$burnMap[spreadState$pixels] <- sim$burnMap[spreadState$pixels] + 1

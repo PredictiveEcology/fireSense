@@ -1,5 +1,9 @@
 # fireSense (development version)
 
+- `rstCurrentBurn` and `rstAnnualBurnID` now start empty in every burn event. In a year with no fire (no
+  ignitions, or none escaped and no small fires) `burn()` returned before rebuilding them, so they kept the
+  previous fire year's pixels; CBM_dataPrep, which reads `rstCurrentBurn` yearly as disturbance events, would have
+  disturbed those pixels again. `burnMap` and `burnSummary` were not affected.
 - `jumpTries` defaults to 20, as fireSense_SpreadFit's fit does (>= 1.0.6.9013), so a forecast spreads
   escaped fires the way they were fitted. 0 turns jumping off.
 - One fire per escaped ignition. `ignitionsAndEscapes` must have `escaped` (fireSense_IgnitionPredict >=
