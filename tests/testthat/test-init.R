@@ -1,6 +1,6 @@
 ## The `init` event: burnMap, rstCurrentBurn, the first scheduled burn, and the early stop.
 
-noFire <- data.table::data.table(pixelID = 1L, escapes = 0L)
+noFire <- data.table::data.table(pixelID = 1L, escapes = 0L, escaped = FALSE)
 
 test_that("init makes burnMap 0 where flammable and NA on the barrier", {
   sim <- runFireSense(noFire, params = list(.runInitialTime = 99)) # no burn within 1..1

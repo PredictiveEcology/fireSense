@@ -1,5 +1,17 @@
 # fireSense (development version)
 
+- One fire per escaped ignition. `ignitionsAndEscapes` must have `escaped` (fireSense_IgnitionPredict >=
+  1.0.0.9003); `escapes` is a coarse pixel's count repeated on each of its ignitions, and spreading `escapes`
+  fires from every row gave, e.g., 8 fires where there were 2 escapes.
+- New parameter `escapeSizeHa` (default 50), as in the spread fit: each escaped fire burns its first 50 ha
+  whatever its spread probability (`SpaDES.tools::spreadCpp(minSize =)`), then spreads normally. `jumpTries`
+  (default 0, off) and `jumpMeanDist` (default 3 cells) pass through to `spreadCpp()` for fires stuck under
+  that size.
+- New input `nonEscapedFireSizesHa` (from fireSense_dataPrepFit): each ignition that did not escape burns a
+  small patch with a size drawn from the study area's observed fires below `escapeSizeHa`. Without it, as
+  before, those ignitions burn nothing.
+- Needs SpaDES.tools >= 2.1.3.9009 and fireSenseUtils >= 0.2.3.9044. Version 2.0.2.9002.
+
 - Fires spread with `SpaDES.tools::spreadCpp()`, the spread the fit uses (fireSenseUtils' objective), instead
   of `spread2()`, so a forecast spreads fires as the fitted parameters assume. Several escapes on one pixel are one
   fire; `spread2()` stopped with "start has duplicates" at three or more. `burnDT` now holds `initialPixels`,

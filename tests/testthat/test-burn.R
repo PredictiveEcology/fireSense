@@ -2,7 +2,8 @@
 ## deterministic -- a fire burns its whole block and nothing else -- so every expected
 ## value below is derived by hand from the toy landscape in helper-toy.R.
 
-ig <- function(pixelID, escapes) data.table::data.table(pixelID = pixelID, escapes = escapes)
+## one row per ignition; `escaped` says whether it escaped (fireSense_IgnitionPredict >= 1.0.0.9003)
+ig <- function(pixelID, escapes) data.table::data.table(pixelID = pixelID, escapes = escapes, escaped = escapes > 0)
 
 test_that("one escaped fire burns exactly its own block", {
   sim <- runFireSense(ig(1L, 1L)) # cell 1 is in the west block (cols 1-4)
