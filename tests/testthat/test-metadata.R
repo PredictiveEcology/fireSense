@@ -60,7 +60,7 @@ test_that("parameter defaults are unchanged", {
   expect_identical(as.numeric(p$.runInitialTime), 7)
   expect_identical(p$.runInterval, 1)
   expect_identical(p$escapeSizeHa, 50)
-  expect_identical(p$jumpTries, 0L)
+  expect_identical(p$jumpTries, 20L)
   expect_identical(p$jumpMeanDist, 3)
   expect_identical(p$whichModulesToPrepare,
                    c("fireSense_SpreadPredict", "fireSense_IgnitionPredict", "fireSense_EscapePredict"))

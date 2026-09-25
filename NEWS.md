@@ -1,5 +1,7 @@
 # fireSense (development version)
 
+- `jumpTries` defaults to 20, as fireSense_SpreadFit's fit does (>= 1.0.6.9013), so a forecast spreads
+  escaped fires the way they were fitted. 0 turns jumping off.
 - One fire per escaped ignition. `ignitionsAndEscapes` must have `escaped` (fireSense_IgnitionPredict >=
   1.0.0.9003); `escapes` is a coarse pixel's count repeated on each of its ignitions, and spreading `escapes`
   fires from every row gave, e.g., 8 fires where there were 2 escapes.

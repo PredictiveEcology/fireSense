@@ -142,7 +142,9 @@ test_that("burnMap and burnSummary accumulate over years", {
 
 test_that("the pixel size sets the area burned", {
   rtm <- toyRTM(res = 100) # 100 * 100 / 1e4 = 1 ha per pixel
-  sim <- runFireSense(ig(1L, 1L),
+  ## At 1 ha per pixel the 50-ha escape size is more than the 40-cell block, so a fire stuck in the
+  ## block would jump the barrier; this test is about pixel size, so jumping is off.
+  sim <- runFireSense(ig(1L, 1L), params = list(jumpTries = 0L),
                       objects = list(rasterToMatch = rtm, flammableRTM = toyFlammable(rtm),
                                      fireSense_SpreadPredicted = toySpreadProb(rtm)))
   expect_equal(sim$burnSummary$areaBurnedHa, 40)
