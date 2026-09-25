@@ -12,7 +12,7 @@ defineModule(sim, list(
     person(c("Alex", "M."), "Chubaty", email = "achubaty@for-cast.ca", role = "ctb")
   ),
   childModules = character(),
-  version = numeric_version("2.0.2.9004"),
+  version = numeric_version("2.0.2.9005"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list("citation.bib"),
@@ -20,6 +20,7 @@ defineModule(sim, list(
   reqdPkgs = list("data.table", "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9044)",
                   "ggplot2", "ggspatial", "PredictiveEcology/SpaDES.tools@development (>= 2.1.3.9009)",
                   "terra"),
+  loadOrder = list(after = c("fireSense_IgnitionPredict", "fireSense_SpreadPredict")),
   parameters = rbind(
     defineParameter(".plots", "character|logical", default = NULL, ## TODO: use .plotInitialTime etc.
                     desc = "Passed to `types` in `Plots()`, e.g. \"screen\", \"png\". `NULL` or `NA` for no plots."),
