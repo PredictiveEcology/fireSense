@@ -20,6 +20,7 @@ test_that("inputs are the expected names and classes", {
       fireSense_SpreadSD        = "SpatRaster|numeric",
       flammableRTM              = "SpatRaster",
       ignitionsAndEscapes       = "data.table",
+      nonEscapedFireSizesHa     = "numeric",
       rasterToMatch             = "SpatRaster")
   )
 })
@@ -42,19 +43,25 @@ test_that("parameters are the expected names and classes", {
                 .plots                = "character|logical",
                 .runInitialTime       = "numeric",
                 .runInterval          = "numeric",
+                escapeSizeHa          = "numeric",
+                jumpMeanDist          = "numeric",
+                jumpTries             = "integer",
                 whichModulesToPrepare = "character")
   expect_identical(classes[order(names(classes))], expected[order(names(expected))])
 })
 
 test_that("parameter defaults are unchanged", {
   ## a simInit with no params gives the defaults; `.runInitialTime` defaults to start(sim)
-  sim <- runFireSense(data.table::data.table(pixelID = 1L, escapes = 0L),
+  sim <- runFireSense(data.table::data.table(pixelID = 1L, escapes = 0L, escaped = FALSE),
                       times = list(start = 7, end = 7), doSpades = FALSE)
   p <- SpaDES.core::params(sim)$fireSense
   expect_null(p$.plots)
   expect_identical(p$.plotInterval, 10)
   expect_identical(as.numeric(p$.runInitialTime), 7)
   expect_identical(p$.runInterval, 1)
+  expect_identical(p$escapeSizeHa, 50)
+  expect_identical(p$jumpTries, 0L)
+  expect_identical(p$jumpMeanDist, 3)
   expect_identical(p$whichModulesToPrepare,
                    c("fireSense_SpreadPredict", "fireSense_IgnitionPredict", "fireSense_EscapePredict"))
 })
@@ -67,5 +74,7 @@ test_that("every parameter, input and output has a description", {
 })
 
 test_that("required packages are unchanged", {
-  expect_setequal(unlist(md$reqdPkgs), c("data.table", "ggplot2", "ggspatial", "terra"))
+  expect_setequal(unlist(md$reqdPkgs), c("data.table", "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9044)",
+                                         "ggplot2", "ggspatial",
+                                         "PredictiveEcology/SpaDES.tools@development (>= 2.1.3.9009)", "terra"))
 })
