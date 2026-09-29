@@ -2,6 +2,8 @@
 
 fireSense is a parent SpaDES module: it has no events, parameters, inputs or outputs of its own. It lists the nine modules of the FireSense family of fire models as `childModules`, so that listing it in `setupProject(modules = )` fetches and runs all of them. See `fireSense.Rmd` for an overview of what each child does.
 
+Children are listed by name, so each comes from the parent's GitHub account and branch: `PredictiveEcology/fireSense@development` fetches every child's `development` branch, and `PredictiveEcology/fireSense@main` every child's `main`. A child written with a branch (`fireSense_summary@modsForFireSense`) or an account keeps it. A module the user lists in `setupProject(modules = )` overrides the parent's entry for it, e.g. `c("PredictiveEcology/fireSense@development", "PredictiveEcology/fireSense_burn@testing")`.
+
 ## Use
 
 ```r
