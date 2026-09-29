@@ -2748,7 +2748,7 @@ border-radius: 0px;
 
 
 <h1 class="title toc-ignore">fireSense Manual</h1>
-<h3 class="subtitle">v.1.0.0</h3>
+<h3 class="subtitle">v.1.0.0.9000</h3>
 <h4 class="date">Last updated: 2026-09-29</h4>
 
 </div>
@@ -2793,37 +2793,38 @@ border-radius: 0px;
 </thead>
 <tbody>
 <tr class="odd">
-<td align="left"><a href="mailto:PredictiveEcology/fireSense_ELFs@development" class="email">PredictiveEcology/fireSense_ELFs@development</a></td>
+<td align="left">fireSense_ELFs</td>
 </tr>
 <tr class="even">
-<td align="left"><a href="mailto:PredictiveEcology/fireSense_dataPrepFit@development" class="email">PredictiveEcology/fireSense_dataPrepFit@development</a></td>
+<td align="left">fireSense_dataPrepFit</td>
 </tr>
 <tr class="odd">
-<td align="left"><a href="mailto:PredictiveEcology/fireSense_ignitionFit@development" class="email">PredictiveEcology/fireSense_ignitionFit@development</a></td>
+<td align="left">fireSense_ignitionFit</td>
 </tr>
 <tr class="even">
-<td align="left"><a href="mailto:PredictiveEcology/fireSense_spreadFit@development" class="email">PredictiveEcology/fireSense_spreadFit@development</a></td>
+<td align="left">fireSense_spreadFit</td>
 </tr>
 <tr class="odd">
-<td align="left"><a href="mailto:PredictiveEcology/fireSense_dataPrepPredict@development" class="email">PredictiveEcology/fireSense_dataPrepPredict@development</a></td>
+<td align="left">fireSense_dataPrepPredict</td>
 </tr>
 <tr class="even">
-<td align="left"><a href="mailto:PredictiveEcology/fireSense_ignitionPredict@development" class="email">PredictiveEcology/fireSense_ignitionPredict@development</a></td>
+<td align="left">fireSense_ignitionPredict</td>
 </tr>
 <tr class="odd">
-<td align="left"><a href="mailto:PredictiveEcology/fireSense_spreadPredict@development" class="email">PredictiveEcology/fireSense_spreadPredict@development</a></td>
+<td align="left">fireSense_spreadPredict</td>
 </tr>
 <tr class="even">
-<td align="left"><a href="mailto:PredictiveEcology/fireSense_burn@development" class="email">PredictiveEcology/fireSense_burn@development</a></td>
+<td align="left">fireSense_burn</td>
 </tr>
 <tr class="odd">
-<td align="left"><a href="mailto:PredictiveEcology/fireSense_summary@modsForFireSense" class="email">PredictiveEcology/fireSense_summary@modsForFireSense</a></td>
+<td align="left"><a href="mailto:fireSense_summary@modsForFireSense" class="email">fireSense_summary@modsForFireSense</a></td>
 </tr>
 </tbody>
 </table>
 </div>
 <div id="migrating-from-the-individual-modules" class="section level3">
 <h3>Migrating from the individual modules</h3>
+<p>Children are listed by name, so each comes from the parent’s GitHub account and branch: <code>PredictiveEcology/fireSense@development</code> fetches every child’s <code>development</code> branch, and <code>PredictiveEcology/fireSense@main</code> every child’s <code>main</code>. A child written with a branch (<code>fireSense_summary@modsForFireSense</code>) or an account keeps it. A module the user lists in <code>setupProject(modules = )</code> overrides the parent’s entry for it, e.g. <code>c(&quot;PredictiveEcology/fireSense@development&quot;, &quot;PredictiveEcology/fireSense_burn@testing&quot;)</code>.</p>
 <p>To migrate: list <code>PredictiveEcology/fireSense@development</code> in <code>setupProject(modules = ...)</code> instead of the individual fireSense modules, and rename these <code>params</code> keys (and <code>whichModulesToPrepare</code> values). <code>fireSense</code> now means the whole family; the burn module is <code>fireSense_burn</code>.</p>
 <table>
 <colgroup>
