@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">fireSense</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.0.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.0.0.9000</span>
       </span>
     </div>
 
@@ -65,6 +65,7 @@
 <div class="page-header"><h1 id="firesense">fireSense<a class="anchor" aria-label="anchor" href="#firesense"></a>
 </h1></div>
 <p>fireSense is a parent SpaDES module: it has no events, parameters, inputs or outputs of its own. It lists the nine modules of the FireSense family of fire models as <code>childModules</code>, so that listing it in <code>setupProject(modules = )</code> fetches and runs all of them. See <code>fireSense.Rmd</code> for an overview of what each child does.</p>
+<p>Children are listed by name, so each comes from the parent’s GitHub account and branch: <code>PredictiveEcology/fireSense@development</code> fetches every child’s <code>development</code> branch, and <code>PredictiveEcology/fireSense@main</code> every child’s <code>main</code>. A child written with a branch (<code>fireSense_summary@modsForFireSense</code>) or an account keeps it. A module the user lists in <code>setupProject(modules = )</code> overrides the parent’s entry for it, e.g. <code>c("PredictiveEcology/fireSense@development", "PredictiveEcology/fireSense_burn@testing")</code>.</p>
 <div class="section level2">
 <h2 id="use">Use<a class="anchor" aria-label="anchor" href="#use"></a>
 </h2>

@@ -1,6 +1,6 @@
 ---
 title: "fireSense Manual"
-subtitle: "v.1.0.0"
+subtitle: "v.1.0.0.9000"
 date: "Last updated: 2026-09-29"
 output:
   bookdown::html_document2:
@@ -56,19 +56,21 @@ SpaDES.project::setupProject(
 ### Child modules
 
 
-|child                                                   |
-|:-------------------------------------------------------|
-|PredictiveEcology/fireSense_ELFs@development            |
-|PredictiveEcology/fireSense_dataPrepFit@development     |
-|PredictiveEcology/fireSense_ignitionFit@development     |
-|PredictiveEcology/fireSense_spreadFit@development       |
-|PredictiveEcology/fireSense_dataPrepPredict@development |
-|PredictiveEcology/fireSense_ignitionPredict@development |
-|PredictiveEcology/fireSense_spreadPredict@development   |
-|PredictiveEcology/fireSense_burn@development            |
-|PredictiveEcology/fireSense_summary@modsForFireSense    |
+|child                              |
+|:----------------------------------|
+|fireSense_ELFs                     |
+|fireSense_dataPrepFit              |
+|fireSense_ignitionFit              |
+|fireSense_spreadFit                |
+|fireSense_dataPrepPredict          |
+|fireSense_ignitionPredict          |
+|fireSense_spreadPredict            |
+|fireSense_burn                     |
+|fireSense_summary@modsForFireSense |
 
 ### Migrating from the individual modules
+
+Children are listed by name, so each comes from the parent's GitHub account and branch: `PredictiveEcology/fireSense@development` fetches every child's `development` branch, and `PredictiveEcology/fireSense@main` every child's `main`. A child written with a branch (`fireSense_summary@modsForFireSense`) or an account keeps it. A module the user lists in `setupProject(modules = )` overrides the parent's entry for it, e.g. `c("PredictiveEcology/fireSense@development", "PredictiveEcology/fireSense_burn@testing")`.
 
 To migrate: list `PredictiveEcology/fireSense@development` in `setupProject(modules = ...)` instead of the individual fireSense modules, and rename these `params` keys (and `whichModulesToPrepare` values). `fireSense` now means the whole family; the burn module is `fireSense_burn`.
 
