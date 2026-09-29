@@ -4,15 +4,15 @@
 md <- SpaDES.core::moduleMetadata(module = moduleName, path = modulePath)
 
 childSpecs <- c(
-  "PredictiveEcology/fireSense_ELFs@development",
-  "PredictiveEcology/fireSense_dataPrepFit@development",
-  "PredictiveEcology/fireSense_ignitionFit@development",
-  "PredictiveEcology/fireSense_spreadFit@development",
-  "PredictiveEcology/fireSense_dataPrepPredict@development",
-  "PredictiveEcology/fireSense_ignitionPredict@development",
-  "PredictiveEcology/fireSense_spreadPredict@development",
-  "PredictiveEcology/fireSense_burn@development",
-  "PredictiveEcology/fireSense_summary@modsForFireSense"
+  "fireSense_ELFs",
+  "fireSense_dataPrepFit",
+  "fireSense_ignitionFit",
+  "fireSense_spreadFit",
+  "fireSense_dataPrepPredict",
+  "fireSense_ignitionPredict",
+  "fireSense_spreadPredict",
+  "fireSense_burn",
+  "fireSense_summary@modsForFireSense"
 )
 childNames <- c("fireSense_ELFs", "fireSense_dataPrepFit", "fireSense_ignitionFit",
                 "fireSense_spreadFit", "fireSense_dataPrepPredict", "fireSense_ignitionPredict",
@@ -21,7 +21,7 @@ childNames <- c("fireSense_ELFs", "fireSense_dataPrepFit", "fireSense_ignitionFi
 test_that("metadata parses and names the parent", {
   expect_identical(md$name, "fireSense")
   expect_identical(md$timeunit, "year")
-  expect_identical(md$version$fireSense, "1.0.0")
+  expect_identical(md$version$fireSense, "1.0.0.9000")
 })
 
 test_that("a parent has no parameters, inputs or outputs", {

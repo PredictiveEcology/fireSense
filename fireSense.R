@@ -13,18 +13,18 @@ defineModule(sim, list(
     person(c("Alex", "M."), "Chubaty", email = "achubaty@for-cast.ca", role = "ctb")
   ),
   childModules = c(
-    "PredictiveEcology/fireSense_ELFs@development",
-    "PredictiveEcology/fireSense_dataPrepFit@development",
-    "PredictiveEcology/fireSense_ignitionFit@development",
-    "PredictiveEcology/fireSense_spreadFit@development",
-    "PredictiveEcology/fireSense_dataPrepPredict@development",
-    "PredictiveEcology/fireSense_ignitionPredict@development",
-    "PredictiveEcology/fireSense_spreadPredict@development",
-    "PredictiveEcology/fireSense_burn@development",
-    "PredictiveEcology/fireSense_summary@modsForFireSense"
+    "fireSense_ELFs",
+    "fireSense_dataPrepFit",
+    "fireSense_ignitionFit",
+    "fireSense_spreadFit",
+    "fireSense_dataPrepPredict",
+    "fireSense_ignitionPredict",
+    "fireSense_spreadPredict",
+    "fireSense_burn",
+    "fireSense_summary@modsForFireSense"
   ),
   version = list(
-    fireSense = "1.0.0",
+    fireSense = "1.0.0.9000",
     fireSense_ELFs = "1.1.7",
     fireSense_dataPrepFit = "1.2.0.9020",
     fireSense_ignitionFit = "1.1.0",
