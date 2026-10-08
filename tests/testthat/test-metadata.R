@@ -21,7 +21,13 @@ childNames <- c("fireSense_ELFs", "fireSense_dataPrepFit", "fireSense_ignitionFi
 test_that("metadata parses and names the parent", {
   expect_identical(md$name, "fireSense")
   expect_identical(md$timeunit, "year")
-  expect_identical(md$version$fireSense, "1.0.0.9000")
+  expect_false(is.na(package_version(md$version$fireSense, strict = FALSE)))
+})
+
+test_that("the version list names a valid version for every child", {
+  ## SpaDES.project fetches a child of fireSense@v<x> at v<its version here>
+  expect_true(all(childNames %in% names(md$version)))
+  expect_false(anyNA(package_version(unlist(md$version[childNames]), strict = FALSE)))
 })
 
 test_that("a parent has no parameters, inputs or outputs", {
