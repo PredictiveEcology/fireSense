@@ -24,16 +24,16 @@ defineModule(sim, list(
     "fireSense_summary@modsForFireSense"
   ),
   version = list(
-    fireSense = "1.0.0.9000",
-    fireSense_ELFs = "1.1.7",
-    fireSense_dataPrepFit = "1.2.0.9020",
-    fireSense_ignitionFit = "1.1.0",
-    fireSense_spreadFit = "1.1.0",
-    fireSense_dataPrepPredict = "1.0.4.9009",
-    fireSense_ignitionPredict = "1.1.0",
-    fireSense_spreadPredict = "1.1.1",
-    fireSense_burn = "2.1.0",
-    fireSense_summary = "1.0.1.9002"
+    fireSense = "1.1.0",
+    fireSense_ELFs = "1.2.0",
+    fireSense_dataPrepFit = "1.3.0",
+    fireSense_ignitionFit = "1.2.0",
+    fireSense_spreadFit = "1.2.0",
+    fireSense_dataPrepPredict = "1.1.0",
+    fireSense_ignitionPredict = "1.2.0",
+    fireSense_spreadPredict = "1.2.0",
+    fireSense_burn = "2.2.0",
+    fireSense_summary = "1.0.5"
   ),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
