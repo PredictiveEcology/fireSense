@@ -24,7 +24,7 @@ defineModule(sim, list(
     "fireSense_summary@modsForFireSense"
   ),
   version = list(
-    fireSense = "1.1.0",
+    fireSense = "1.1.0.9000",
     fireSense_ELFs = "1.2.0",
     fireSense_dataPrepFit = "1.3.0",
     fireSense_ignitionFit = "1.2.0",

@@ -1,3 +1,5 @@
+# fireSense (development version)
+
 # fireSense 1.1.0
 
 This is the first release of fireSense as one family. `fireSense@main` loads the released version of every fireSense module, and `fireSense@development` their development versions, so a project no longer mixes released and in-progress modules by accident. To load exactly this set of releases, and nothing newer, use `PredictiveEcology/fireSense@v1.1.0`. This module's version list says which release of each module belongs to it (ELFs 1.2.0, dataPrepFit 1.3.0, ignitionFit 1.2.0, spreadFit 1.2.0, dataPrepPredict 1.1.0, ignitionPredict 1.2.0, spreadPredict 1.2.0, burn 2.2.0), and SpaDES.project 1.2.0.9013 or later fetches each module at that release.
