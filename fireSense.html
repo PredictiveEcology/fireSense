@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">fireSense</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.0.0.9000</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.1.0</span>
       </span>
     </div>
 
@@ -83,18 +83,19 @@
 <div class="section level3">
 <h3 id="child-modules">Child modules<a class="anchor" aria-label="anchor" href="#child-modules"></a></h3>
 <table class="table"><thead><tr><th align="left">child</th>
-</tr></thead><tbody><tr><td align="left"><a href="mailto:PredictiveEcology/fireSense_ELFs@development" class="email">PredictiveEcology/fireSense_ELFs@development</a></td>
-</tr><tr><td align="left"><a href="mailto:PredictiveEcology/fireSense_dataPrepFit@development" class="email">PredictiveEcology/fireSense_dataPrepFit@development</a></td>
-</tr><tr><td align="left"><a href="mailto:PredictiveEcology/fireSense_ignitionFit@development" class="email">PredictiveEcology/fireSense_ignitionFit@development</a></td>
-</tr><tr><td align="left"><a href="mailto:PredictiveEcology/fireSense_spreadFit@development" class="email">PredictiveEcology/fireSense_spreadFit@development</a></td>
-</tr><tr><td align="left"><a href="mailto:PredictiveEcology/fireSense_dataPrepPredict@development" class="email">PredictiveEcology/fireSense_dataPrepPredict@development</a></td>
-</tr><tr><td align="left"><a href="mailto:PredictiveEcology/fireSense_ignitionPredict@development" class="email">PredictiveEcology/fireSense_ignitionPredict@development</a></td>
-</tr><tr><td align="left"><a href="mailto:PredictiveEcology/fireSense_spreadPredict@development" class="email">PredictiveEcology/fireSense_spreadPredict@development</a></td>
-</tr><tr><td align="left"><a href="mailto:PredictiveEcology/fireSense_burn@development" class="email">PredictiveEcology/fireSense_burn@development</a></td>
-</tr><tr><td align="left"><a href="mailto:PredictiveEcology/fireSense_summary@modsForFireSense" class="email">PredictiveEcology/fireSense_summary@modsForFireSense</a></td>
+</tr></thead><tbody><tr><td align="left">fireSense_ELFs</td>
+</tr><tr><td align="left">fireSense_dataPrepFit</td>
+</tr><tr><td align="left">fireSense_ignitionFit</td>
+</tr><tr><td align="left">fireSense_spreadFit</td>
+</tr><tr><td align="left">fireSense_dataPrepPredict</td>
+</tr><tr><td align="left">fireSense_ignitionPredict</td>
+</tr><tr><td align="left">fireSense_spreadPredict</td>
+</tr><tr><td align="left">fireSense_burn</td>
+</tr><tr><td align="left"><a href="mailto:fireSense_summary@modsForFireSense" class="email">fireSense_summary@modsForFireSense</a></td>
 </tr></tbody></table></div>
 <div class="section level3">
 <h3 id="migrating-from-the-individual-modules">Migrating from the individual modules<a class="anchor" aria-label="anchor" href="#migrating-from-the-individual-modules"></a></h3>
+<p>Children are listed by name, so each comes from the parent’s GitHub account and branch: <code>PredictiveEcology/fireSense@development</code> fetches every child’s <code>development</code> branch, and <code>PredictiveEcology/fireSense@main</code> every child’s <code>main</code>. A child written with a branch (<code>fireSense_summary@modsForFireSense</code>) or an account keeps it. A module the user lists in <code>setupProject(modules = )</code> overrides the parent’s entry for it, e.g. <code>c("PredictiveEcology/fireSense@development", "PredictiveEcology/fireSense_burn@testing")</code>.</p>
 <p>To migrate: list <code>PredictiveEcology/fireSense@development</code> in <code>setupProject(modules = ...)</code> instead of the individual fireSense modules, and rename these <code>params</code> keys (and <code>whichModulesToPrepare</code> values). <code>fireSense</code> now means the whole family; the burn module is <code>fireSense_burn</code>.</p>
 <table class="table"><colgroup><col width="50%"><col width="50%"></colgroup><thead><tr><th>old module name</th>
 <th>new module name</th>
