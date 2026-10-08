@@ -61,6 +61,8 @@ knitr::kable(data.frame(child = md$childModules, row.names = NULL))
 
 ### Migrating from the individual modules
 
+Children are listed by name, so each comes from the parent's GitHub account and branch: `PredictiveEcology/fireSense@development` fetches every child's `development` branch, and `PredictiveEcology/fireSense@main` every child's `main`. A child written with a branch (`fireSense_summary@modsForFireSense`) or an account keeps it. A module the user lists in `setupProject(modules = )` overrides the parent's entry for it, e.g. `c("PredictiveEcology/fireSense@development", "PredictiveEcology/fireSense_burn@testing")`.
+
 To migrate: list `PredictiveEcology/fireSense@development` in `setupProject(modules = ...)` instead of the individual fireSense modules, and rename these `params` keys (and `whichModulesToPrepare` values). `fireSense` now means the whole family; the burn module is `fireSense_burn`.
 
 | old module name | new module name |
