@@ -29,7 +29,10 @@ expectPredictedWithBothELFs <- function(sim, times = list(start = 2021, end = 20
   expect_gt(sum(!is.na(terra::values(sim$fireSense_SpreadPredicted, mat = FALSE))), 0)
   expect_s4_class(sim$fireSense_IgAndEscapeProbRas, "SpatRaster")
   expect_s4_class(sim$burnMap, "SpatRaster")
-  expect_true(data.table::is.data.table(sim$burnSummary))
+  ## ignitions that do not escape burn a patch of an observed size (none without: they burned nothing)
+  expect_gt(length(sim$nonEscapedFireSizesHa), 0)
+  ## one run over both ELFs (.ELFind names them; it was "4.3" or NA)
+  expect_setequal(sim$.ELFind, predictOnlyELFs)
 }
 
 test_that("the fireSense parent with the default doFit predicts from the stored fits, and fits nothing", {
