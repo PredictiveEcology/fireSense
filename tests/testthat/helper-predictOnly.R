@@ -3,11 +3,11 @@
 ## ledgers on Google Drive, so they run only when FIRESENSE_PREDICT_E2E is "true" (see
 ## predictOnlySkip()).
 
-## The two ELFs: 6.6.1 and 6.6.2 are neighbours (a 535 km border) and both have rows in the production
-## spread and ignition ledgers. The study area is a 60 x 60 km box across their border, so one run
+## The two ELFs: 6.6.1 and 6.6.2 are neighbours (a 535 km border) and both have stored spread and ignition
+## fits; the default ledger, "latest" with no fitFileSuffix, takes each from the newest ledger file that
+## has it. The study area is a 60 x 60 km box across their border, so one run
 ## predicts with both ELFs' fits (and blends them), as a user's own study area would.
 predictOnlyELFs <- c("6.6.1", "6.6.2")
-predictOnlyFitFileSuffix <- "_bufIndep20261024"   # the production ledgers (2026-10-24)
 predictOnlyCRS <- "+proj=lcc +lat_0=0 +lon_0=-95 +lat_1=49 +lat_2=77 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs"
 predictOnlyBox <- function() {
   terra::vect(terra::ext(1331940, 1391940, 6414900, 6474900), crs = predictOnlyCRS)
@@ -35,7 +35,7 @@ predictOnlyModules <- function(variant = c("parent", "noFit")) {
 }
 
 ## setupProject() for one variant, in `root` (inputs, outputs, cache and scratch below it). Only what a
-## predict-only user must set: the study area, the years, and the ledger suffix.
+## predict-only user must set: the study area and the years.
 predictOnlySetup <- function(variant, root, modulePath, times = list(start = 2021, end = 2023),
                              authFile = Sys.getenv("FIRESENSE_GOOGLE_AUTH", "~/googledriveAuthentication.R")) {
   sal <- predictOnlyBox()
@@ -56,8 +56,7 @@ predictOnlySetup <- function(variant, root, modulePath, times = list(start = 202
                    spades.useRequire = FALSE,
                    spades.moduleCodeChecks = FALSE,
                    spades.allowInitDuringSimInit = TRUE),
-    ## dataYear: the vegetation and land-cover year (fireSense_dataPrepPredict's default is 2011)
-    params = list(.globals = list(fitFileSuffix = predictOnlyFitFileSuffix, dataYear = 2020, .plots = NA),
+    params = list(.globals = list(.plots = NA),
                   ## only the simulated years' projected climate (the default is 2017:2100)
                   canClimateData = list(projectedClimateYears = times$start:times$end)),
     standAlone = FALSE, updateRprofile = FALSE, useGit = FALSE, Restart = FALSE
